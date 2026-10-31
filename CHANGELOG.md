@@ -10,6 +10,8 @@ details.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-31
+
 ### Added
 
 - Shared expenses: split an expense transaction with up to 20 people, review what
@@ -128,6 +130,18 @@ details.
   errors instead of silently producing a partial SQL dump that appeared
   successful.
 - Data race in the interval cron test, exposed by enabling the race detector.
+- `SECURITY.md` now lists every outbound connection with the setting that turns
+  it off, and the README no longer counts Cloud Settings Sync as network access:
+  synced preferences are stored in the application database.
+- The CLI reference matches the commands again: `--features` (not
+  `--feature-types`), the `user-session-new` `--type`/`--expiresInSeconds`
+  flags, and `user-session-revoke --token`.
+- The API reference documents the real map proxy paths
+  (`/proxy/map/{tile,annotation}/:zoomLevel/:coordinateX/:fileName`) and the
+  `map_data_fetch_proxy` key.
+- The configuration reference documents `static_root_path` and notes the parser
+  fallbacks for `[database] type` and `[mail] smtp_host` when the keys are
+  omitted.
 
 ### Security
 
@@ -184,6 +198,7 @@ details.
 
 - Multi-platform application icons for the Linux, macOS, and Windows builds.
 
-[Unreleased]: https://github.com/James-HoneyBadger/honey-ledger/compare/v1.4.3...HEAD
+[Unreleased]: https://github.com/James-HoneyBadger/honey-ledger/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/James-HoneyBadger/honey-ledger/releases/tag/v1.5.0
 [1.4.3]: https://github.com/James-HoneyBadger/honey-ledger/releases/tag/v1.4.3
 [1.4.2]: https://github.com/James-HoneyBadger/honey-ledger/releases/tag/v1.4.2

@@ -140,26 +140,26 @@ Enable or disable a user account.
 
 ### user-set-restrict-features
 
-Set the complete feature restriction bitmask for a user.
+Replace a user's feature restrictions with the comma-separated list of feature types given in `--features` (`-t`).
 
 ```bash
-./honey-ledger userdata user-set-restrict-features --username alice --feature-types "9,10,11"
+./honey-ledger userdata user-set-restrict-features --username alice --features "9,10,11"
 ```
 
 ### user-add-restrict-features
 
-Add restrictions to a user's existing set.
+Add the feature types in `--features` (`-t`) to a user's existing restrictions.
 
 ```bash
-./honey-ledger userdata user-add-restrict-features --username alice --feature-types "13"
+./honey-ledger userdata user-add-restrict-features --username alice --features "13"
 ```
 
 ### user-remove-restrict-features
 
-Remove specific restrictions from a user.
+Remove the feature types in `--features` (`-t`) from a user's restrictions.
 
 ```bash
-./honey-ledger userdata user-remove-restrict-features --username alice --feature-types "9,10"
+./honey-ledger userdata user-remove-restrict-features --username alice --features "9,10"
 ```
 
 | Feature Type | Description |
@@ -225,18 +225,18 @@ List all active sessions for a user.
 
 ### user-session-new
 
-Create a new session token for a user (outputs the token).
+Create a new session token for a user (outputs the token). `--type` selects `api` (default) or `mcp`, and `--expiresInSeconds` sets the lifetime (0 - 4294967295, `0` means no expiration).
 
 ```bash
-./honey-ledger userdata user-session-new --username alice
+./honey-ledger userdata user-session-new --username alice --expiresInSeconds 2592000
 ```
 
 ### user-session-revoke
 
-Revoke a specific session.
+Revoke a specific session by token.
 
 ```bash
-./honey-ledger userdata user-session-revoke --username alice --session-id <id>
+./honey-ledger userdata user-session-revoke --token <token>
 ```
 
 ### user-session-clear

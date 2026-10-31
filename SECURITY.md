@@ -10,10 +10,30 @@ a new patch release; there are no long-term support branches.
 
 | Version | Supported |
 |---------|-----------|
-| Latest `1.4.x` release | ✅ |
+| Latest `1.5.x` release | ✅ |
 | Older releases | ❌ |
 
-## Optional third-party model access
+## Network access
+
+Every outbound connection is tied to a feature you enable or a service you
+configure. Nothing is sent in the background on its own.
+
+| Feature | Connects to | When | Off switch |
+|---------|-------------|------|------------|
+| Exchange rates | The `[exchange_rates] data_source` you choose (European Central Bank by default) | When rates are fetched or refreshed | Set `data_source = user_custom` |
+| Map tiles | The selected `[map] map_provider` tile server, directly or through the optional backend proxy | Only while a map is displayed | Leave `map_provider` blank |
+| Receipt recognition | The `[llm_image_recognition]` provider | Only when you run recognition | `transaction_from_ai_image_recognition = false` |
+| AI assistant | The `[llm_ai_assistant]` provider | Only when you ask a question | `ai_assistant = false` |
+| Mail | Your `[mail]` SMTP server | Only when a mail action runs | `enable_smtp = false` |
+| Object storage | Your MinIO or WebDAV server | Only when a picture or avatar is saved | Keep `[storage] type = local_filesystem` |
+| OAuth2/OIDC login | Your identity provider | Only when you sign in through it | `enable_oauth2_auth = false` |
+| Update check | GitHub releases | Background check in packaged AppImage and Windows builds | `HONEY_DISABLE_UPDATE_CHECK=1` |
+
+A remote MySQL or PostgreSQL database is contacted whenever you configure one;
+the default SQLite database is a local file. Cloud Settings Sync stores
+preferences in the application database and sends them nowhere else.
+
+### Optional third-party model access
 
 Two features can send data to a model endpoint that you configure yourself; both
 are disabled by default and send nothing on their own:

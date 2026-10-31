@@ -1332,16 +1332,18 @@ Completes a third-party login. The request is authorized by the temporary token 
 ### Map Tile Proxy
 
 ```
-GET /proxy/map/tile/:tileImageUrl
+GET /proxy/map/tile/:zoomLevel/:coordinateX/:fileName
 ```
 
-Proxies map tile requests (when `enable_map_data_fetch_proxy = true`).
+Proxies map tile requests (when `[map] map_data_fetch_proxy = true` and the selected provider supports proxying).
 
 ### Map Annotation Proxy
 
 ```
-GET /proxy/map/annotation/:annotationUrl
+GET /proxy/map/annotation/:zoomLevel/:coordinateX/:fileName
 ```
+
+Proxies map annotation tiles for `tianditu`, or for `custom` when a `custom_map_tile_server_annotation_url` is set. Registered when `[map] map_data_fetch_proxy = true`.
 
 ### Amap Service Proxy
 

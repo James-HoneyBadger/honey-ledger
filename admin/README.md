@@ -95,4 +95,4 @@ admin/
 - **[Fyne v2](https://fyne.io/)** — Native Go GUI toolkit
 - **[go-sqlite3](https://github.com/mattn/go-sqlite3)** — SQLite3 driver (CGO)
 - **[go-ini](https://gopkg.in/ini.v1)** — INI file parser
-- Go 1.25+, CGO enabled
+- Go 1.26+, CGO enabled

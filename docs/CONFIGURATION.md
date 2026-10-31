@@ -111,6 +111,7 @@ request_id_header = true
 | `root_url` | string | `%(protocol)s://%(domain)s:%(http_port)s/` | Full URL. Supports the `%(protocol)s`, `%(domain)s`, and `%(http_port)s` placeholders. The protocol is always `http` |
 | `log_request` | bool | `true` | Log every request with its duration. `token`, `access_token`, `id_token`, `code`, `state`, and `password` query values are redacted |
 | `request_id_header` | bool | `true` | Add an `X-Request-Id` response header so a request or error can be traced |
+| `static_root_path` | string | `public` | Optional; not present in the template. Root directory of the built frontend, relative to the working directory or absolute |
 
 ---
 
@@ -149,7 +150,7 @@ auto_update_database = true
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `type` | string | `sqlite3` | `sqlite3`, `mysql`, or `postgres` |
+| `type` | string | `sqlite3` | `sqlite3`, `mysql`, or `postgres`. The shipped template sets `sqlite3`; if the key is omitted entirely the parser falls back to `mysql` |
 | `host` | string | `127.0.0.1:3306` | Connection address, for `mysql` and `postgres` |
 | `name` | string | `honey_ledger` | Database name, for `mysql` and `postgres` |
 | `user` | string | `root` | Database user, for `mysql` and `postgres` |
@@ -179,7 +180,7 @@ from_address =
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `enable_smtp` | bool | `false` | Send mail through an SMTP server |
-| `smtp_host` | string | `127.0.0.1:25` | SMTP server address including the port |
+| `smtp_host` | string | `127.0.0.1:25` | SMTP server address including the port. The template sets `127.0.0.1:25`; if the key is omitted the value is empty |
 | `smtp_user` | string | *(empty)* | SMTP user name |
 | `smtp_passwd` | string | *(empty)* | SMTP password |
 | `smtp_skip_tls_verify` | bool | `false` | Skip TLS certificate verification when connecting |

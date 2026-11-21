@@ -135,6 +135,9 @@ fabric.properties
 *.iml
 .idea/
 
+# Local import samples (may hold personal financial data)
+/Sample/
+
 ### node_modules/
 node_modules/
 

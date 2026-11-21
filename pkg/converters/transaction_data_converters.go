@@ -16,9 +16,11 @@ import (
 	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/gnucash"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/iif"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/jdcom"
+	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/msmoney"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/mt"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/ofx"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/qif"
+	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/quicken"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/wechat"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/errs"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/models"
@@ -55,6 +57,10 @@ func GetTransactionDataImporter(fileType string) (converter.TransactionDataImpor
 		return qif.QifDayMonthYearTransactionDataImporter, nil
 	} else if fileType == "iif" {
 		return iif.IifTransactionDataFileImporter, nil
+	} else if fileType == "microsoft_money_mny" {
+		return msmoney.MicrosoftMoneyTransactionDataFileImporter, nil
+	} else if fileType == "quicken_qdf" {
+		return quicken.QuickenTransactionDataFileImporter, nil
 	} else if fileType == "camt052" {
 		return camt.Camt052TransactionDataImporter, nil
 	} else if fileType == "camt053" {

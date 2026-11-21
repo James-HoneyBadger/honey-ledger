@@ -48,4 +48,6 @@ var (
 	ErrCannotMoveTransactionFromOrToHiddenAccount                  = NewNormalError(NormalSubcategoryTransaction, 38, http.StatusBadRequest, "cannot move transaction from or to hidden account")
 	ErrCannotMoveTransactionFromOrToParentAccount                  = NewNormalError(NormalSubcategoryTransaction, 39, http.StatusBadRequest, "cannot move transaction from or to parent account")
 	ErrCannotMoveTransactionBetweenAccountsWithDifferentCurrencies = NewNormalError(NormalSubcategoryTransaction, 40, http.StatusBadRequest, "cannot move transaction between accounts with different currencies")
+	ErrImportMicrosoftMoneyDataFileNotReadable                     = NewNormalError(NormalSubcategoryTransaction, 41, http.StatusBadRequest, "microsoft money data file cannot be read directly")
+	ErrImportQuickenDataFileNotReadable                            = NewNormalError(NormalSubcategoryTransaction, 42, http.StatusBadRequest, "quicken data file cannot be read directly")
 )

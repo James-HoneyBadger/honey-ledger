@@ -1179,6 +1179,8 @@
         "transaction has too many pictures": "இந்த பரிவர்த்தனையில் நிறைய படம்கள் உள்ளன",
         "import file type is empty": "இறக்குமதி கோப்பு வகை காலியாக உள்ளது",
         "import file type not supported": "இறக்குமதி கோப்பு வகை ஆதரிக்கப்படவில்லை",
+        "microsoft money data file cannot be read directly": "Microsoft Money saves its data in a proprietary Jet database that cannot be read directly. In Money, choose File > Export > QIF (or OFX) and import the exported file instead.",
+        "quicken data file cannot be read directly": "Quicken saves its data in a proprietary data file that cannot be read directly. In Quicken, choose File > Export > QIF (or QFX/OFX) and import the exported file instead.",
         "no data to import": "இறக்குமதி செய்ய தரவு இல்லை",
         "cannot add transaction before balance modification transaction": "இருப்பு மாற்றம் பரிவர்த்தனைகளை விட முதலில் பரிவர்த்தனை சேர்க்க முடியாது",
         "balance modification transaction cannot modify transaction time": "இருப்பு மாற்றம் பரிவர்த்தனையின் நேரம்வை மாற்ற முடியாது",

@@ -1179,6 +1179,8 @@
         "transaction has too many pictures": "Слишком много изображений в этой транзакции",
         "import file type is empty": "Тип файла для импорта пуст",
         "import file type not supported": "Тип файла для импорта не поддерживается",
+        "microsoft money data file cannot be read directly": "Microsoft Money saves its data in a proprietary Jet database that cannot be read directly. In Money, choose File > Export > QIF (or OFX) and import the exported file instead.",
+        "quicken data file cannot be read directly": "Quicken saves its data in a proprietary data file that cannot be read directly. In Quicken, choose File > Export > QIF (or QFX/OFX) and import the exported file instead.",
         "no data to import": "Нет данных для импорта",
         "cannot add transaction before balance modification transaction": "Нельзя добавить транзакцию до транзакции изменения баланса",
         "balance modification transaction cannot modify transaction time": "Нельзя изменить время транзакции для транзакции изменения баланса",

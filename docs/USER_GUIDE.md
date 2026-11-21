@@ -249,8 +249,8 @@ Import transactions from external financial software and bank exports.
 |----------|---------|
 | **Honey Ledger** | CSV, TSV |
 | **Custom** | CSV/TSV/SSV (configurable), Excel (.xlsx, .xls) |
-| **Quicken** | QFX, QIF (Y/M/D, M/D/Y, D/M/Y date formats), IIF |
-| **Microsoft Money** | OFX |
+| **Quicken** | QFX, QIF (Y/M/D, M/D/Y, D/M/Y date formats), IIF, QDF (guided — see below) |
+| **Microsoft Money** | OFX, MNY (guided — see below) |
 | **General Data Exchange** | OFX, QFX, QIF, IIF |
 | **Bank Statements** | Camt.052 (XML), Camt.053 (XML), MT940 (SWIFT) |
 | **Chinese Payment** | Alipay (App/Web CSV), WeChat Pay (Excel/CSV), JD.com Finance |
@@ -265,6 +265,26 @@ Import transactions from external financial software and bank exports.
 5. **For custom formats:** Define column mappings (which column maps to amount, date, category, etc.).
 6. **Review:** Check the parsed transactions. Use batch replace to fix categories or accounts.
 7. Click **Import** to save the transactions.
+
+### Migrating from Microsoft Money or Quicken
+
+Both programs save their ledgers in undocumented database formats — Money in a
+Microsoft Jet database with a private MSISAM page layout, Quicken in its own
+B-tree file (and SQLite with a private schema on macOS). Honey Ledger can
+recognise both files but cannot decode them, so importing the data file directly
+is not possible.
+
+Selecting **Quicken Data File (QDF)** or **Microsoft Money Data File (MNY)** in
+the import dialog explains the supported route, which is the export both
+programs still provide:
+
+1. **Microsoft Money**: `File` → `Export` → `QIF` (or `OFX`).
+2. **Quicken**: `File` → `Export` → `QIF`, or `QFX`/`OFX` for a single account.
+3. Import the exported file here, choosing the matching Quicken or Microsoft
+   Money format.
+
+Accounts, categories, payees, tags and transfers in the export are created
+during the import review, so a full history migrates in one pass.
 
 ### Custom Import Scripts
 

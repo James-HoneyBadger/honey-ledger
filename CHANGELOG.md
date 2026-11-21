@@ -10,6 +10,13 @@ details.
 
 ## [Unreleased]
 
+### Added
+
+- Import dialog entries for Microsoft Money (`.mny`) and Quicken (`.qdf`) data
+  files. Both are undocumented databases, so selecting one explains why the file
+  cannot be decoded and which QIF/OFX export to use instead, rather than failing
+  with a generic "import file type not supported" error.
+
 ### Changed
 
 - Honey Ledger is now licensed under the GNU General Public License v3.0 or later

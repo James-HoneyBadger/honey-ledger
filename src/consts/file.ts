@@ -241,6 +241,11 @@ export const SUPPORTED_IMPORT_FILE_CATEGORY_AND_TYPES: ImportFileCategoryAndType
                 type: 'iif',
                 name: 'Intuit Interchange Format (IIF) File',
                 extensions: '.iif'
+            },
+            {
+                type: 'quicken_qdf',
+                name: 'Quicken Data File (QDF)',
+                extensions: '.qdf'
             }
         ]
     },
@@ -251,6 +256,11 @@ export const SUPPORTED_IMPORT_FILE_CATEGORY_AND_TYPES: ImportFileCategoryAndType
                 type: 'ofx',
                 name: 'Open Financial Exchange (OFX) File',
                 extensions: '.ofx'
+            },
+            {
+                type: 'microsoft_money_mny',
+                name: 'Microsoft Money Data File (MNY)',
+                extensions: '.mny'
             }
         ]
     },

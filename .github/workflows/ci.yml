@@ -127,6 +127,9 @@ jobs:
       - name: Check brand consistency
         run: node scripts/check-brand.mjs
 
+      - name: Check license headers
+        run: node scripts/check-license-headers.mjs
+
       - name: Check locale key parity
         run: node scripts/check-locales.mjs
 

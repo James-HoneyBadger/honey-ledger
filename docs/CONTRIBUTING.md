@@ -274,16 +274,20 @@ Never report a vulnerability in a public issue. Follow the process in
 
 ## Repository Hygiene Checks
 
-Two checks guard the project's local-first guarantees. CI runs them in the same
-job as the locale check; run them before pushing:
+Three checks guard the project's identity, license and local-first guarantees.
+CI runs them in the same job as the locale check; run them before pushing:
 
 ```bash
-node scripts/check-brand.mjs        # product identity matches across manifests
-./scripts/check-no-telemetry.sh     # no analytics or crash-reporting endpoints
+node scripts/check-brand.mjs            # product identity matches across manifests
+node scripts/check-license-headers.mjs  # every source file carries an SPDX header
+./scripts/check-no-telemetry.sh         # no analytics or crash-reporting endpoints
 ```
 
 `check-brand.mjs` keeps the Electron `appId`, the admin tool's Fyne application
 ID, both `package.json` versions, and the copyright holder in agreement.
+`check-license-headers.mjs` walks the source tree and fails when a `.go`, `.ts`,
+`.js`, `.mjs`, `.cjs`, `.sh`, `.ps1`, `.bat` or `.vue` file does not start with
+the two-line SPDX header (after the shebang, when there is one).
 `check-no-telemetry.sh` fails if an analytics or crash-reporting host appears in
 `src/`, `electron/`, `pkg/`, or `cmd/`. Extend its pattern list only for
 services the user configures themselves (LLM, map, mail, and storage providers

@@ -351,9 +351,10 @@ npx jest --watch
 These run in CI and are worth running before pushing:
 
 ```bash
-node scripts/check-brand.mjs        # product name, app id, version, copyright
-node scripts/check-locales.mjs      # locale key parity and backend error keys
-./scripts/check-no-telemetry.sh     # no analytics or telemetry endpoints
+node scripts/check-brand.mjs            # product name, app id, version, copyright
+node scripts/check-license-headers.mjs  # SPDX header on every source file
+node scripts/check-locales.mjs          # locale key parity and backend error keys
+./scripts/check-no-telemetry.sh         # no analytics or telemetry endpoints
 node --test electron/userDataLayout.test.js
 ```
 

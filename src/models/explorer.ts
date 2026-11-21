@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import { type PartialRecord, itemAndIndex, keysIfValueEquals } from '@/core/base.ts';
 import { TimezoneTypeForStatistics } from '@/core/timezone.ts';
 import { AccountType } from '@/core/account.ts';

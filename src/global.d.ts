@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 declare const __HONEY_LEDGER_IS_PRODUCTION__: boolean;
 declare const __HONEY_LEDGER_VERSION__: string;
 declare const __HONEY_LEDGER_BUILD_UNIX_TIME__: string;

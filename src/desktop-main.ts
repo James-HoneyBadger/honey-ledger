@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import { createApp, ref } from 'vue';
 import { createPinia } from 'pinia';
 import { type I18n, type Composer, createI18n } from 'vue-i18n';

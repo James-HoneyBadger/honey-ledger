@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 <template>
     <div class="d-flex" :style="`min-width: ${minWidth}px`" v-if="minWidth"></div>
     <v-slide-group class="slide-group-with-stepper mb-6 hidden-xs" show-arrows>

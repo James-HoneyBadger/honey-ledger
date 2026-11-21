@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import { ImportTransactionDataMapping } from '@/core/import_transaction.ts';
 
 import logger from '@/lib/logger.ts';

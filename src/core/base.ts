@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type PartialRecord<K extends keyof any, T> = {
     [P in K]?: T;

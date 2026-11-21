@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 param(
     [string]$Type,
     [switch]$NoLint,
@@ -199,6 +202,7 @@ function Build-Package {
     Copy-Item conf package\conf -Recurse
     Copy-Item templates package\templates -Recurse
     Copy-Item LICENSE package\
+    Copy-Item NOTICE package\
 
     Push-Location package
     7z a -r -tzip -mx9 "..\$packageFileName" *

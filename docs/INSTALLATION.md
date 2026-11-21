@@ -81,7 +81,7 @@ cd honey-ledger
 ./scripts/build.sh package
 ```
 
-This produces a `.tar.gz` archive containing the binary, frontend assets, configuration template, email templates, and license.
+This produces a `.tar.gz` archive containing the binary, frontend assets, configuration template, email templates, and the `LICENSE`/`NOTICE` files.
 
 ### Backend Only
 

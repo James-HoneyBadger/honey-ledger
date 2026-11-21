@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 <template>
     <div class="btn-vertical-group d-flex flex-column">
         <v-btn border :key="idx"

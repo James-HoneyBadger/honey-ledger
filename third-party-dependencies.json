@@ -14,13 +14,6 @@
         "licenseUrl": "https://github.com/gin-contrib/cache/blob/v1.4.1/LICENSE"
     },
     {
-        "name": "GZIP gin's middleware",
-        "copyright": "Copyright (c) 2017 Gin-Gonic",
-        "url": "https://github.com/gin-contrib/gzip",
-        "license": "MIT License",
-        "licenseUrl": "https://github.com/gin-contrib/gzip/blob/v1.2.5/LICENSE"
-    },
-    {
         "name": "xorm",
         "copyright": "Copyright (c) 2013 - 2015 The Xorm Authors",
         "url": "https://xorm.io/xorm",
@@ -365,17 +358,23 @@
     },
     {
         "name": "Hand drawn minimal background",
+        "copyright": "Designed by Freepik",
         "url": "https://www.freepik.com/free-vector/hand-drawn-minimal-background_15441932.htm",
-        "licenseUrl": "https://www.freepikcompany.com/legal"
+        "license": "Freepik Free License (attribution required, not covered by the GPL)",
+        "licenseUrl": "https://www.freepik.com/legal/terms-of-use"
     },
     {
         "name": "Illustration of people working at the office",
+        "copyright": "Designed by Freepik",
         "url": "https://www.freepik.com/free-vector/illustration-people-working-office_5161711.htm",
-        "licenseUrl": "https://www.freepikcompany.com/legal"
+        "license": "Freepik Free License (attribution required, not covered by the GPL)",
+        "licenseUrl": "https://www.freepik.com/legal/terms-of-use"
     },
     {
         "name": "Meeting scenes at the office collection",
+        "copyright": "Designed by Freepik",
         "url": "https://www.freepik.com/free-vector/meeting-scenes-office-collection_4085819.htm",
-        "licenseUrl": "https://www.freepikcompany.com/legal"
+        "license": "Freepik Free License (attribution required, not covered by the GPL)",
+        "licenseUrl": "https://www.freepik.com/legal/terms-of-use"
     }
 ]

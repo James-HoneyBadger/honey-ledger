@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 <template>
     <vue-date-picker inline auto-apply
                      model-type="yyyy-MM-dd"

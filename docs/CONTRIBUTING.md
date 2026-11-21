@@ -125,6 +125,21 @@ chore: update Go dependencies to latest patch versions
 - Custom styles go in `src/styles/`.
 - Use SCSS variables for theming consistency.
 
+### License Headers
+
+Every source file starts with the two-line SPDX header, below the shebang when
+the file has one and above any build tags in Go files:
+
+```go
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+```
+
+Use `#` for shell, PowerShell and batch scripts, and HTML comments
+(`<!-- ... -->`) at the top of a Vue single-file component. New third-party code
+or artwork must be listed in `third-party-dependencies.json` with its license,
+because the About dialog reads that file.
+
 ---
 
 ## Pull Request Process
@@ -278,4 +293,4 @@ are out of scope).
 
 ## License
 
-By contributing to Honey Ledger, you agree that your contributions will be licensed under the [MIT License](../LICENSE).
+Honey Ledger is released under the [GNU General Public License v3.0 or later](../LICENSE). By contributing, you agree that your contributions will be licensed under the same terms (inbound = outbound).

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package models
 
 // OAuth2LoginRequest represents all parameters of OAuth 2.0 login request

@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 <template>
     <v-dialog width="800" :persistent="submitting || (!!defaultCurrencyAmount && defaultCurrencyAmount !== 1) || currency !== defaultCurrency || (!!targetCurrencyAmount && targetCurrencyAmount !== 1)" v-model="showState">
         <v-card class="pa-sm-1 pa-md-2">

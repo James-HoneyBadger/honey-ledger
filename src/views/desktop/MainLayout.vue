@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 <template>
     <div class="layout-wrapper layout-nav-type-vertical layout-navbar-static layout-footer-static layout-content-width-fluid"
          :class="{ 'layout-overlay-nav': mdAndDown }">

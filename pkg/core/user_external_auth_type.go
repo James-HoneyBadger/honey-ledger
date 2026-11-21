@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package core
 
 const USER_EXTERNAL_AUTH_TYPE_CATEOGRY_OAUTH2 = "oauth2"

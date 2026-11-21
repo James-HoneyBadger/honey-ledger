@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import type { HebrewCalendarLocaleData } from '@/core/calendar.ts';
 import type { Year1BasedMonth, YearMonthDay, CalendarAlternateDate } from '@/core/datetime.ts';
 

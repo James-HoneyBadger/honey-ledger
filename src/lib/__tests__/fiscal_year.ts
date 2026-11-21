@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Unit tests for fiscal year functions
 import fs from 'fs';
 import path from 'path';

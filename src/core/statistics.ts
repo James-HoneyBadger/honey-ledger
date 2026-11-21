@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import type { TypeAndName, TypeAndNameWithAlternativeName } from './base.ts';
 import { DateRange } from '@/core/datetime.ts';
 

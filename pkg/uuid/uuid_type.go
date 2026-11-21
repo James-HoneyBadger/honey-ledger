@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package uuid
 
 // UuidType represents uuid type, the value of uuid type should should be from 0 to 15

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import { useI18n as useVueI18n } from 'vue-i18n';
 import moment from 'moment-timezone';
 

@@ -46,6 +46,7 @@ runs:
         Copy-Item -Recurse -Force conf -Destination honey-ledger\conf
         Copy-Item -Recurse -Force templates -Destination honey-ledger\templates
         Copy-Item .\LICENSE -Destination honey-ledger\
+        Copy-Item .\NOTICE -Destination honey-ledger\
         Push-Location honey-ledger
         7z a -r -tzip -mx9 ..\${{ inputs.package-file-name-prefix }}-windows-x64.zip *
         Pop-Location

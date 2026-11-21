@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 function getServerSetting(key: string): string | number | boolean | Record<string, string> | undefined | null {
     const settings = window.HONEY_LEDGER_SERVER_SETTINGS || {};
     return settings[key];

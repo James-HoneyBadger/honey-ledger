@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 export const TRANSACTION_MIN_AMOUNT: number = -99999999999; // -999999999.99
 export const TRANSACTION_MAX_AMOUNT: number = 99999999999; //  999999999.99
 export const TRANSACTION_MAX_PICTURE_COUNT: number = 10;

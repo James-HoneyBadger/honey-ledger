@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import { entries } from '@/core/base.ts';
 import type { ColorValue } from '@/core/color.ts';
 import { CategoryType } from '@/core/category.ts';

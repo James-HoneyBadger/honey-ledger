@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 <template>
     <v-dialog class="month-range-selection-dialog" width="640" :persistent="!!persistent" v-model="showState">
         <v-card class="pa-sm-1 pa-md-2">

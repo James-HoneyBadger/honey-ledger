@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Verifies that every locale defines exactly the same translation keys as
 // en.json. The UI looks keys up dynamically (for example `t('calendar.' + name)`
 // and `t(`language.${name}`)`), so a key missing from a locale — or from the

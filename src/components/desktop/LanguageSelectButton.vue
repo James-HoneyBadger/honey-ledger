@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 <template>
     <v-menu location="bottom" max-height="500" @update:model-value="onMenuStateChanged">
         <template #activator="{ props }">

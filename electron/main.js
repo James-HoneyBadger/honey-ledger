@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 const { app, BrowserWindow, protocol, shell, net: electronNet, session, Tray, Menu, globalShortcut, Notification, nativeImage, ipcMain } = require('electron');
 const path = require('path');
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env sh
+# SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 TYPE=""
 NO_LINT="0"
@@ -224,7 +226,7 @@ build_package() {
     cp -R dist package/public
     cp -R conf package/conf
     cp -R templates package/templates
-    cp LICENSE package/
+    cp LICENSE NOTICE package/
 
     cd package || { echo_red "Error: Build Failed"; exit 1; }
     tar cvzf "../$package_file_name" .

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import { defineStore } from 'pinia';
 
 import { useSettingsStore } from './setting.ts';

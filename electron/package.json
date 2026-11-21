@@ -8,7 +8,7 @@
     "name": "Honey Badger Universe",
     "email": "James-HoneyBadger@users.noreply.github.com"
   },
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
@@ -50,6 +50,14 @@
           "honey-ledger",
           "honey-ledger.exe"
         ]
+      },
+      {
+        "from": "../LICENSE",
+        "to": "LICENSE"
+      },
+      {
+        "from": "../NOTICE",
+        "to": "NOTICE"
       },
       {
         "from": "../conf",

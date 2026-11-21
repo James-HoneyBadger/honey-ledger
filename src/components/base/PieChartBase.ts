@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import { ref, computed, watch } from 'vue';
 
 import { useI18n } from '@/locales/helpers.ts';

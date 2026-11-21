@@ -541,7 +541,8 @@ Source
               ├── public/ (frontend build output)
               ├── conf/ (config template)
               ├── templates/ (email + prompt)
-              └── LICENSE
+              ├── LICENSE
+              └── NOTICE
 ```
 
 ---

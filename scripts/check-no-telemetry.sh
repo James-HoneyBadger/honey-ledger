@@ -1,4 +1,7 @@
 #!/usr/bin/env sh
+# SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Fails when analytics, crash-reporting, or telemetry endpoints appear in the
 # code that ships to users. Honey Ledger is local-first: it must not phone home.
 

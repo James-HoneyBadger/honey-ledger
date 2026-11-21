@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 export const BASE_API_URL_PATH: string = '/api';
 export const BASE_PROXY_URL_PATH: string = '/proxy';
 export const BASE_AMAP_API_PROXY_URL_PATH: string = '/_AMapService';

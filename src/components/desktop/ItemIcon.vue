@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 <template>
     <i class="item-icon" :class="classes" :style="style" v-if="!hiddenStatus">
         <slot></slot>

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import { computed } from 'vue';
 
 import type {ColorStyleValue, ColorValue} from '@/core/color.ts';

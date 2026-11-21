@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import { type TypeAndName, type TypeAndDisplayName, entries, keys } from './base.ts';
 import { KnownAmountFormat } from './numeral.ts';
 import { type DateFormatOrder, KnownDateTimeFormat } from './datetime.ts';

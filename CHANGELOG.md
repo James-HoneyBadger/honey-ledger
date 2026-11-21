@@ -10,6 +10,19 @@ details.
 
 ## [Unreleased]
 
+### Changed
+
+- Honey Ledger is now licensed under the GNU General Public License v3.0 or later
+  (`GPL-3.0-or-later`) instead of the MIT License. Every source file carries an
+  SPDX header, the copyright and warranty notice moved to `NOTICE`, and the
+  license ships with the standalone and Electron packages.
+
+### Fixed
+
+- `third-party-dependencies.json` no longer lists the unused `gin-contrib/gzip`
+  middleware, and the bundled Freepik illustrations record their license and
+  attribution instead of only a link to Freepik's legal page.
+
 ## [1.5.0] - 2026-10-31
 
 ### Added

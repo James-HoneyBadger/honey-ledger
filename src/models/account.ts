@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import type { HiddenAmount, NumberWithSuffix } from '@/core/numeral.ts';
 import type { ColorValue } from '@/core/color.ts';
 import { AccountType, AccountCategory } from '@/core/account.ts';

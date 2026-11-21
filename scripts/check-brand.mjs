@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Verifies that product identity is consistent across the manifests, the
 // desktop shell, the admin tool, and the licence.
 
@@ -26,6 +29,7 @@ const pkg = JSON.parse(read('package.json'));
 const electronPkg = JSON.parse(read('electron/package.json'));
 const adminMain = read('admin/main.go');
 const licence = read('LICENSE');
+const notice = read('NOTICE');
 const readme = read('README.md');
 
 check('package.json name', pkg.name === EXPECTED_NAME, `expected "${EXPECTED_NAME}", found "${pkg.name}"`);
@@ -62,7 +66,9 @@ check(
     `package.json is ${pkg.version}, electron/package.json is ${electronPkg.version}`
 );
 
-check('LICENSE copyright holder', licence.includes(COPYRIGHT_HOLDER), `"${COPYRIGHT_HOLDER}" not found`);
+// LICENSE holds the verbatim GPL-3.0 text, so the copyright notice lives in NOTICE.
+check('LICENSE is the GPL-3.0 text', licence.includes('GNU GENERAL PUBLIC LICENSE') && licence.includes('Version 3, 29 June 2007'));
+check('NOTICE copyright holder', notice.includes(COPYRIGHT_HOLDER), `"${COPYRIGHT_HOLDER}" not found`);
 check('README copyright holder', readme.includes(COPYRIGHT_HOLDER), `"${COPYRIGHT_HOLDER}" not found`);
 
 if (failures.length > 0) {

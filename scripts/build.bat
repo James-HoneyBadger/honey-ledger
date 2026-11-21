@@ -1,3 +1,6 @@
+REM SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+REM SPDX-License-Identifier: GPL-3.0-or-later
+
 @echo off
 
 set "TYPE="
@@ -259,6 +262,7 @@ goto :pre_parse_args
     xcopy conf package\conf /e /i
     xcopy templates package\templates /e /i
     xcopy LICENSE package\
+    xcopy NOTICE package\
 
     cd package
 

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 package alipay
 
 // alipayAppTransactionDataCsvFileImporter defines the structure of alipay app csv importer for transaction data

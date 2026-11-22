@@ -93,7 +93,7 @@
         "copyright": "Copyright (c) 2009 The Go Authors. All rights reserved.",
         "url": "https://golang.org/x/crypto",
         "license": "BSD 3-Clause \"New\" or \"Revised\" License",
-        "licenseUrl": "https://cs.opensource.google/go/x/crypto/+/refs/tags/v0.47.0:LICENSE"
+        "licenseUrl": "https://cs.opensource.google/go/x/crypto/+/refs/tags/v0.59.0:LICENSE"
     },
     {
         "name": "Go Networking",

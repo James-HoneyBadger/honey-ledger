@@ -91,5 +91,8 @@
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "assets/icon.ico"
     }
+  },
+  "overrides": {
+    "minimatch": "^11.0.9"
   }
 }

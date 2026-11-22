@@ -294,11 +294,6 @@ func startWebServer(c *core.CliContext) error {
 				apiV1Route.POST("/users/external_auth/unlink.json", bindApi(api.UserExternalAuths.UnlinkExternalAuthHandler))
 			}
 
-			// Application Cloud Settings
-			apiV1Route.GET("/users/settings/cloud/get.json", bindApi(api.UserApplicationCloudSettings.ApplicationSettingsGetHandler))
-			apiV1Route.POST("/users/settings/cloud/update.json", bindApi(api.UserApplicationCloudSettings.ApplicationSettingsUpdateHandler))
-			apiV1Route.POST("/users/settings/cloud/disable.json", bindApi(api.UserApplicationCloudSettings.ApplicationSettingsDisableHandler))
-
 			// Two-Factor Authorization
 			if config.EnableTwoFactor {
 				apiV1Route.GET("/users/2fa/status.json", bindApi(api.TwoFactorAuthorizations.TwoFactorStatusHandler))

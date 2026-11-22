@@ -250,7 +250,7 @@ Import transactions from external financial software and bank exports.
 | **Honey Ledger** | CSV, TSV |
 | **Custom** | CSV/TSV/SSV (configurable), Excel (.xlsx, .xls) |
 | **Quicken** | QFX, QIF (Y/M/D, M/D/Y, D/M/Y date formats), IIF, QDF (guided — see below) |
-| **Microsoft Money** | OFX, MNY (guided — see below) |
+| **Microsoft Money** | OFX, MNY (.mny read directly — see below) |
 | **General Data Exchange** | OFX, QFX, QIF, IIF |
 | **Bank Statements** | Camt.052 (XML), Camt.053 (XML), MT940 (SWIFT) |
 | **Chinese Payment** | Alipay (App/Web CSV), WeChat Pay (Excel/CSV), JD.com Finance |
@@ -268,23 +268,35 @@ Import transactions from external financial software and bank exports.
 
 ### Migrating from Microsoft Money or Quicken
 
-Both programs save their ledgers in undocumented database formats — Money in a
-Microsoft Jet database with a private MSISAM page layout, Quicken in its own
-B-tree file (and SQLite with a private schema on macOS). Honey Ledger can
-recognise both files but cannot decode them, so importing the data file directly
-is not possible.
+Money saves its ledger in a Microsoft Jet database that names the MSISAM engine
+instead of the Access engine, which is why no Access or Jet tool opens it. Honey
+Ledger reads that format directly, so a `.mny` file imports without an export
+step — see [MONEY_FILE_FORMAT.md](./MONEY_FILE_FORMAT.md) for the format itself.
 
-Selecting **Quicken Data File (QDF)** or **Microsoft Money Data File (MNY)** in
-the import dialog explains the supported route, which is the export both
-programs still provide:
+Select **Microsoft Money Data File (MNY)**, upload the file and review the parsed
+transactions. The import reads:
 
-1. **Microsoft Money**: `File` → `Export` → `QIF` (or `OFX`).
-2. **Quicken**: `File` → `Export` → `QIF`, or `QFX`/`OFX` for a single account.
-3. Import the exported file here, choosing the matching Quicken or Microsoft
-   Money format.
+| In Money | Becomes |
+|----------|---------|
+| Accounts | Accounts, with their currencies |
+| Categories | Categories, grouped as Money nests them |
+| Expense and income transactions | Expense and income transactions |
+| Transfers between accounts | Transfers, once per pair of accounts |
+| Transactions with splits | One transaction per split, under the same date and account |
+| Memos | Transaction descriptions |
 
-Accounts, categories, payees, tags and transfers in the export are created
-during the import review, so a full history migrates in one pass.
+Investment activity — shares bought, sold or held — has no counterpart in Honey
+Ledger, so those rows are skipped and the count is logged. A file protected with
+a Money password is refused, because its pages are scrambled; remove the
+password in Money and import again.
+
+Quicken still saves its ledger in a proprietary B-tree file (SQLite with a
+private schema on macOS), which Honey Ledger cannot decode. For Quicken, choose
+**File** → **Export** → **QIF**, or **QFX**/**OFX** for a single account, and
+import the exported file here.
+
+Accounts, categories and transfers in either route are created during the import
+review, so a full history migrates in one pass.
 
 ### Custom Import Scripts
 

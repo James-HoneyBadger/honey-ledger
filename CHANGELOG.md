@@ -12,16 +12,23 @@ details.
 
 ### Added
 
+- Microsoft Money data files (`.mny`) now import directly. Money saves its ledger
+  in a Jet database that names the MSISAM engine, and the importer reads it
+  without an export step: accounts with their currencies, categories grouped as
+  Money nests them, expense and income transactions, one transfer per pair of
+  accounts, one transaction per split, and memos as descriptions. Investment
+  activity has no counterpart in the ledger and is skipped. A password protected
+  file is reported as such instead of failing silently.
 - A reader for the Microsoft Money data file format
   (`pkg/converters/msmoney/msisam`). It decodes the database header, the table
   definitions, the catalog that names the tables and the values in their rows,
-  and reads a real Money Sunset database end to end: accounts, categories,
-  currencies and 39 000 transactions out of the sample. The format is documented
-  in [docs/MONEY_FILE_FORMAT.md](docs/MONEY_FILE_FORMAT.md).
+  and reads a real Money Sunset database end to end: 165 accounts, 195
+  categories, 155 currencies and 39 293 transactions. The format is documented in
+  [docs/MONEY_FILE_FORMAT.md](docs/MONEY_FILE_FORMAT.md).
 - Import dialog entries for Microsoft Money (`.mny`) and Quicken (`.qdf`) data
-  files. Both are undocumented databases, so selecting one explains why the file
-  cannot be decoded and which QIF/OFX export to use instead, rather than failing
-  with a generic "import file type not supported" error.
+  files. Quicken files cannot be decoded, so selecting one explains which
+  QIF/OFX export to use instead, rather than failing with a generic "import file
+  type not supported" error.
 
 ### Changed
 

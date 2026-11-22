@@ -178,3 +178,25 @@ case table name, so the table holding `hacct` is `ACCT`.
 Money names its core tables `ACCT`, `CAT`, `CRNC`, `TRN` and `TRN_SPLIT`. A
 transaction is in `TRN`, a split of a transaction is in `TRN_SPLIT`, categories
 are in `CAT`, accounts in `ACCT` and currencies in `CRNC`.
+
+## Reading a ledger out of a data file
+
+The importer in [`pkg/converters/msmoney`](../pkg/converters/msmoney) turns the
+tables into transactions. Four rules matter:
+
+- **A transfer is stored twice**, once in each account, with `hacctLink` naming
+  the other account. Only the row that takes the money out becomes a transfer, so
+  the pair is imported once.
+- **A transaction with splits is stored as a parent row that holds the total**
+  plus one row per split. `TRN_SPLIT` links a split to its parent, so the parent
+  is dropped and every split becomes a transaction under the parent's date and
+  account.
+- **An investment row names a security** in `hsec`. It records shares rather than
+  money, so it is skipped; the cash side of the activity still imports.
+- **Categories form a tree.** The root is `INCOME` or `EXPENSE`, which is a
+  direction rather than a category, so a category's grouping is its parent and a
+  transaction filed straight against a root stays uncategorized.
+
+An amount is stored with four decimals and imports with two, rounded away from
+zero. Dates count days from 1899-12-30, and a date Money never set falls far
+outside the range a transaction can hold.

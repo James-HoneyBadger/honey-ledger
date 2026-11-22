@@ -50,4 +50,5 @@ var (
 	ErrCannotMoveTransactionBetweenAccountsWithDifferentCurrencies = NewNormalError(NormalSubcategoryTransaction, 40, http.StatusBadRequest, "cannot move transaction between accounts with different currencies")
 	ErrImportMicrosoftMoneyDataFileNotReadable                     = NewNormalError(NormalSubcategoryTransaction, 41, http.StatusBadRequest, "microsoft money data file cannot be read directly")
 	ErrImportQuickenDataFileNotReadable                            = NewNormalError(NormalSubcategoryTransaction, 42, http.StatusBadRequest, "quicken data file cannot be read directly")
+	ErrImportMicrosoftMoneyDataFileEncrypted                       = NewNormalError(NormalSubcategoryTransaction, 43, http.StatusBadRequest, "microsoft money data file is password protected")
 )

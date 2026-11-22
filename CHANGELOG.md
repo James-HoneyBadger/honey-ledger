@@ -8,7 +8,14 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 Releases before 1.4.2 are not catalogued here; see the commit history for
 details.
 
-## [Unreleased]
+## [2.0.0] - 2026-11-22
+
+The first release under the GNU General Public License, and the first with no
+built-in AI: the large language model features were removed and replaced with a
+local, rule-based analysis endpoint. The CLI, configuration format and database
+schema are unchanged, so an existing installation upgrades in place; the major
+version marks the license change and the removal of the AI API endpoints, both of
+which affect anyone shipping or embedding Honey Ledger.
 
 ### Added
 
@@ -29,19 +36,45 @@ details.
   files. Quicken files cannot be decoded, so selecting one explains which
   QIF/OFX export to use instead, rather than failing with a generic "import file
   type not supported" error.
+- A local financial analysis endpoint, `POST /api/v1/analysis.json`. It computes
+  income, expense and net totals per currency, the top expense categories, the
+  largest expenses, recurring (subscription-like) payments, unusual spending,
+  account balances and shared expenses — entirely on the machine, with no model
+  and no outbound call.
 
 ### Changed
 
-- Honey Ledger is now licensed under the GNU General Public License v3.0 or later
-  (`GPL-3.0-or-later`) instead of the MIT License. Every source file carries an
-  SPDX header, the copyright and warranty notice moved to `NOTICE`, and the
-  license ships with the standalone and Electron packages.
+- **Honey Ledger is now licensed under the GNU General Public License v3.0 or
+  later** (`GPL-3.0-or-later`) instead of the MIT License. Every source file
+  carries an SPDX header, the copyright and warranty notice moved to `NOTICE`,
+  and the license ships with the standalone and Electron packages. Anyone
+  redistributing Honey Ledger, or building on it, now does so under the terms of
+  the GPL.
+- The README and the user guide describe the complete feature set, grouped by
+  what you do with it, and the user guide documents the local financial analysis
+  and the statistics chart types.
+
+### Removed
+
+- The AI receipt recognition feature (`POST
+  /api/v1/llm/transactions/recognize_receipt_image.json`) and all large language
+  model provider integrations (OpenAI, OpenAI-compatible, Anthropic,
+  Anthropic-compatible, OpenRouter, Ollama, LM Studio and Google AI).
+- The AI assistant endpoint (`POST /api/v1/ai/ask.json`), replaced by the local
+  `POST /api/v1/analysis.json` endpoint.
 
 ### Fixed
 
 - `third-party-dependencies.json` no longer lists the unused `gin-contrib/gzip`
   middleware, and the bundled Freepik illustrations record their license and
   attribution instead of only a link to Freepik's legal page.
+
+### Documentation
+
+- New [Microsoft Money file format reference](docs/MONEY_FILE_FORMAT.md): the
+  header, the scrambled block that hides the database key, page types, table
+  definitions, the row layout, and how the importer turns the tables into
+  transactions.
 
 ## [1.5.0] - 2026-10-31
 
@@ -231,7 +264,7 @@ details.
 
 - Multi-platform application icons for the Linux, macOS, and Windows builds.
 
-[Unreleased]: https://github.com/James-HoneyBadger/honey-ledger/compare/v1.5.0...HEAD
+[2.0.0]: https://github.com/James-HoneyBadger/honey-ledger/releases/tag/v2.0.0
 [1.5.0]: https://github.com/James-HoneyBadger/honey-ledger/releases/tag/v1.5.0
 [1.4.3]: https://github.com/James-HoneyBadger/honey-ledger/releases/tag/v1.4.3
 [1.4.2]: https://github.com/James-HoneyBadger/honey-ledger/releases/tag/v1.4.2

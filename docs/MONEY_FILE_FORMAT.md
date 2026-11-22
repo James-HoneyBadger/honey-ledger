@@ -9,6 +9,46 @@ Everything in this document was verified against a real Microsoft Money Sunset
 database. The reader that implements it lives in
 [`pkg/converters/msmoney/msisam`](../pkg/converters/msmoney/msisam).
 
+## Why this matters
+
+Microsoft Money was discontinued in 2009 and its support ended in 2011. The free
+*Money Plus Sunset* edition still opens the files, but only on Windows, only with
+activation-free installs, and — in several international editions — not at all:
+Sunset could not read non-US data files. Fifteen years on, a great many people
+still have a `.mny` file holding ten or twenty years of accounts, transactions,
+splits, budgets and investment lots, and nowhere modern to put it.
+
+The obstacle is the file itself. A `.mny` is a Jet 4 database in a variant the
+engine calls MSISAM, so:
+
+- Jet and Access drivers refuse it, because the header does not name their engine;
+- LibreOffice Base reads Access databases through those very drivers, so it refuses it too;
+- the mainstream finance applications — Quicken, GnuCash, HomeBank, Moneydance —
+  expect QIF, OFX or CSV, and none of them contains a reader for the format;
+- producing that interchange file normally requires running Money or Sunset to do
+  the export, which is exactly what someone on macOS, Linux, or with only a backup
+  file cannot do.
+
+That leaves commercial converters and a few community tools that dump the tables
+to CSV through the Java Access library. Reading the database inside the
+application, in Go, with no external runtime and no export step, is what this
+package does; it is the reason the importer can offer "select the `.mny` file"
+instead of "go and find a Windows machine first".
+
+A reader is only half of it. The other half is knowing what the tables mean —
+which rows are the two sides of a transfer, which are the splits of a parent, and
+which are investments that hold shares rather than money. See
+[Reading a ledger out of a data file](#reading-a-ledger-out-of-a-data-file).
+
+### What it covers
+
+| Money version | Notes |
+|---------------|-------|
+| Money 2001 through Money Plus 2008, including the Sunset edition | The Jet 4 / 4096-byte page layout, which this package reads |
+| Backups (`.mbf`) | A Microsoft Cabinet around the same database; unpack it with `cabextract` |
+| Money 2000 and earlier | Not supported yet: those files use the older 2048-byte page layout |
+| Password protected files | Reported as `ErrEncryptedDatabase`; remove the password in Money first |
+
 ## Containers
 
 | Extension | Contents |

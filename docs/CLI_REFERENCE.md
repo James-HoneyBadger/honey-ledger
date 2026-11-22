@@ -177,7 +177,6 @@ Remove the feature types in `--features` (`-t`) from a user's restrictions.
 | 11 | Clear All Data |
 | 12 | Sync Application Settings |
 | 13 | MCP Access |
-| 14 | AI Image Recognition |
 | 15 | OAuth 2.0 Login |
 | 16 | Unlink Third-Party Login |
 | 17 | Generate API Token |

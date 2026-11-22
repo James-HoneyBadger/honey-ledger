@@ -39,9 +39,6 @@ import {
 import {
     type ExportTransactionDataRequest
 } from '@/models/data_management.ts';
-import type {
-    RecognizedReceiptImageResponse
-} from '@/models/large_language_model.ts';
 
 import {
     getUserTransactionDraft,
@@ -1254,40 +1251,6 @@ export const useTransactionsStore = defineStore('transactions', () => {
         });
     }
 
-    function recognizeReceiptImage({ imageFile, cancelableUuid }: { imageFile: File, cancelableUuid?: string }): Promise<RecognizedReceiptImageResponse> {
-        return new Promise((resolve, reject) => {
-            services.recognizeReceiptImage({ imageFile, cancelableUuid }).then(response => {
-                const data = response.data;
-
-                if (!data || !data.success || !data.result) {
-                    reject({ message: 'Unable to recognize image' });
-                    return;
-                }
-
-                resolve(data.result);
-            }).catch(error => {
-                if (error.canceled) {
-                    reject(error);
-                    return;
-                }
-
-                logger.error('failed to recognize image', error);
-
-                if (error.response && error.response.data && error.response.data.errorMessage) {
-                    reject({ error: error.response.data });
-                } else if (!error.processed) {
-                    reject({ message: 'Unable to recognize image' });
-                } else {
-                    reject(error);
-                }
-            });
-        });
-    }
-
-    function cancelRecognizeReceiptImage(cancelableUuid: string): void {
-        services.cancelRequest(cancelableUuid);
-    }
-
     function parseImportCustomFile({ fileType, fileEncoding, importFile }: { fileType: string, fileEncoding?: string, importFile: File }): Promise<string[][]> {
         return new Promise((resolve, reject) => {
             services.parseImportCustomFile({ fileType, fileEncoding, importFile }).then(response => {
@@ -1502,8 +1465,6 @@ export const useTransactionsStore = defineStore('transactions', () => {
         saveTransaction,
         moveAllTransactionsBetweenAccounts,
         deleteTransaction,
-        recognizeReceiptImage,
-        cancelRecognizeReceiptImage,
         parseImportCustomFile,
         parseImportTransaction,
         importTransactions,

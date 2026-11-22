@@ -108,7 +108,6 @@ Gin Router ──► Middleware Chain ──► API Handler ──► Service �
    - DataStore (database connection)
    - Logger (file or console output)
    - Storage (local filesystem, MinIO, or WebDAV)
-   - LLM providers for receipt recognition and the AI assistant
    - UUID generator
    - Duplicate checker
    - Avatar provider
@@ -467,7 +466,7 @@ Each token is a JWT signed with a random per-token secret stored in the `token_r
 
 ### Feature Restrictions
 
-Per-user bitmask (`UserFeatureRestrictions`) controls access to 17 features. Administrators can restrict specific users from operations like importing data, clearing data, or using MCP.
+Per-user bitmask (`UserFeatureRestrictions`) controls access to 16 features. Administrators can restrict specific users from operations like importing data, clearing data, or using MCP.
 
 ---
 
@@ -494,15 +493,12 @@ Per-user bitmask (`UserFeatureRestrictions`) controls access to 17 features. Adm
 
 16 central bank and financial data sources. Rates are fetched periodically and cached with configurable TTL.
 
-### LLM Providers
+### Financial Analysis
 
-8 supported providers (`openai`, `openai_compatible`, `anthropic`,
-`anthropic_compatible`, `openrouter`, `ollama`, `lm_studio`, `google_ai`), used
-independently by receipt recognition and by the AI assistant. Receipt recognition
-sends the image to the configured API and parses structured transaction data from
-the response using a prompt template (`templates/prompt/receipt_image_recognition.tmpl`);
-the assistant sends only an aggregated, de-identified summary of the user's
-finances built by `assembleAIAssistantContext`.
+A local, rule-based analysis service (`pkg/services/analysis.go`) computes income,
+expense and net totals per currency, top categories, largest expenses, recurring
+payments, unusual spending, account balances and shared expenses. It is exposed
+through `POST /api/v1/analysis.json` and sends nothing off the machine.
 
 ### Map Providers
 

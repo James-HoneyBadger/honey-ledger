@@ -14,7 +14,6 @@ import (
 	"github.com/James-HoneyBadger/honey-ledger/pkg/datastore"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/duplicatechecker"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/exchangerates"
-	"github.com/James-HoneyBadger/honey-ledger/pkg/llm"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/log"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/mail"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/models"
@@ -105,15 +104,6 @@ func initializeSystem(c *core.CliContext) (*settings.Config, error) {
 	if err != nil {
 		if !isDisableBootLog {
 			log.BootErrorf(c, "[initializer.initializeSystem] initializes object storage failed, because %s", err.Error())
-		}
-		return nil, err
-	}
-
-	err = llm.InitializeLargeLanguageModelProvider(config)
-
-	if err != nil {
-		if !isDisableBootLog {
-			log.BootErrorf(c, "[initializer.initializeSystem] initializes large language model provider failed, because %s", err.Error())
 		}
 		return nil, err
 	}
@@ -307,36 +297,6 @@ func getConfigWithoutSensitiveData(config *settings.Config) *settings.Config {
 
 	if clonedConfig.WebDAVConfig != nil && clonedConfig.WebDAVConfig.Password != "" {
 		clonedConfig.WebDAVConfig.Password = "****"
-	}
-
-	if clonedConfig.ReceiptImageRecognitionLLMConfig != nil {
-		if clonedConfig.ReceiptImageRecognitionLLMConfig.OpenAIAPIKey != "" {
-			clonedConfig.ReceiptImageRecognitionLLMConfig.OpenAIAPIKey = "****"
-		}
-
-		if clonedConfig.ReceiptImageRecognitionLLMConfig.OpenAICompatibleAPIKey != "" {
-			clonedConfig.ReceiptImageRecognitionLLMConfig.OpenAICompatibleAPIKey = "****"
-		}
-
-		if clonedConfig.ReceiptImageRecognitionLLMConfig.AnthropicCompatibleAPIKey != "" {
-			clonedConfig.ReceiptImageRecognitionLLMConfig.AnthropicCompatibleAPIKey = "****"
-		}
-
-		if clonedConfig.ReceiptImageRecognitionLLMConfig.AnthropicAPIKey != "" {
-			clonedConfig.ReceiptImageRecognitionLLMConfig.AnthropicAPIKey = "****"
-		}
-
-		if clonedConfig.ReceiptImageRecognitionLLMConfig.OpenRouterAPIKey != "" {
-			clonedConfig.ReceiptImageRecognitionLLMConfig.OpenRouterAPIKey = "****"
-		}
-
-		if clonedConfig.ReceiptImageRecognitionLLMConfig.LMStudioToken != "" {
-			clonedConfig.ReceiptImageRecognitionLLMConfig.LMStudioToken = "****"
-		}
-
-		if clonedConfig.ReceiptImageRecognitionLLMConfig.GoogleAIAPIKey != "" {
-			clonedConfig.ReceiptImageRecognitionLLMConfig.GoogleAIAPIKey = "****"
-		}
 	}
 
 	if clonedConfig.OAuth2ClientSecret != "" {

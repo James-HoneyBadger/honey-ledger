@@ -124,7 +124,6 @@ pkg/
   errs/             # Error definitions
   exchangerates/    # Exchange rate data sources
   httpclient/       # HTTP client utilities
-  llm/              # LLM provider integrations
   locales/          # Server-side localization
   log/              # Logging infrastructure
   mail/             # Email sending

@@ -1,44 +1,110 @@
 # Honey Ledger
 
-A standalone desktop personal finance management application.
+**A local-first personal finance desktop app that reads the file formats your bank and your old software give you, reports on them properly, and never phones home.**
 
-Honey Ledger is a self-contained Electron desktop application for individuals who want full control over their financial data. The Go backend runs inside the app and everything you enter lives in a database you control — SQLite on your own machine by default, or a MySQL/PostgreSQL server you point it at. There is no account to create and no server to run. Network access is limited to the features that need it: exchange-rate downloads, map tiles, receipt recognition, the AI assistant, SMTP mail, your own object storage, an identity provider if you enable OAuth2/OIDC login, and update checks. None of them carry telemetry and every one is optional: leave them unconfigured or switch them off and the app runs fully offline. [SECURITY.md](SECURITY.md) lists every outbound connection with the setting that turns it off, and the [documentation](docs/) describes the switches in detail.
+[![CI](https://github.com/James-HoneyBadger/honey-ledger/actions/workflows/ci.yml/badge.svg)](https://github.com/James-HoneyBadger/honey-ledger/actions/workflows/ci.yml)
+**Free software** (GPL-3.0-or-later) · **Windows**, **macOS**, **Linux** · **19 languages** · **159 currencies**
+
+Honey Ledger is a self-contained Electron desktop application for individuals who want full control over their financial data. The Go backend runs inside the app and everything you enter lives in a database you control — SQLite on your own machine by default, or a MySQL/PostgreSQL server you point it at. There is no account to create and no server to run. Network access is limited to the features that need it: exchange-rate downloads, map tiles, SMTP mail, your own object storage, an identity provider if you enable OAuth2/OIDC login, and update checks. None of them carry telemetry and every one is optional: leave them unconfigured or switch them off and the app runs fully offline. Financial analysis is local and rule-based; there is no built-in AI and no model endpoint. [SECURITY.md](SECURITY.md) lists every outbound connection with the setting that turns it off, and the [documentation](docs/) describes the switches in detail.
+
+## What it does best
+
+| | |
+|---|---|
+| **Opens Microsoft Money files directly** | A `.mny` file is Microsoft's own MSISAM database, and Quicken, GnuCash, HomeBank and Moneydance all expect an interchange file instead — producing one means running a working copy of Money, fifteen years after it was discontinued. Honey Ledger reads the database itself, in-process, on any platform it runs on: accounts, currencies, categories, transactions, transfers and splits, with no export step and no unsupported Windows install. Plus QFX, QIF, OFX, IIF, CSV/TSV/SSV, Excel, Camt.052/053, MT940, GnuCash, Firefly III, Beancount, Alipay, WeChat Pay, JD.com and Feidee — 35 import entries in the dialog. |
+| **Your data stays yours** | SQLite on your disk by default, no account, no cloud, no telemetry. Every outbound connection is documented with the switch that turns it off; unconfigure them all and the app is fully offline. |
+| **Reporting that answers questions** | 18 chart types over categorical, trend and asset analyses — spend by category, income by account, cash flow, net worth over time — every figure converted into your base currency. An insights explorer builds your own queries, and transaction review flags probable duplicates, odd amounts and subscriptions. |
+| **Multi-currency for real** | 159 currencies with a currency per account and per user, 15 central-bank and public rate feeds, manual overrides, and reports that add unlike currencies up correctly. |
+| **Analysis without handing over your ledger** | A local, rule-based analysis endpoint (`POST /api/v1/analysis.json`) reports your totals, top categories, largest expenses, recurring payments, unusual spending and balances — all computed on your machine, with no AI and no model endpoint. |
+| **Free software, and stays that way** | GPL-3.0-or-later, an SPDX header on every source file, and a CI check that fails the build if one goes missing. |
+| **Desktop-native, not a web page** | System tray, global shortcuts, desktop notifications, app lock, automatic updates, dark mode, and native installers for all three platforms. |
+| **Runs how you want** | SQLite, MySQL or PostgreSQL; a full REST API plus MCP; 19 languages and 139 timezones, each user with their own. |
+| **Secure by default, restrictable per user** | Two-factor authentication, OAuth2/OIDC single sign-on, session management, API tokens, and 16 capabilities an administrator can switch off for a given user. |
+
+## What's new in 2.0
+
+- **Microsoft Money import, natively** — point Honey Ledger at a Money `.mny` file and it reads the database itself: accounts with their currencies, categories as Money nests them, expense and income transactions, one transfer per pair of accounts, and one transaction per split. No Windows, no copy of Money, no converter, no upload. The format is documented in [docs/MONEY_FILE_FORMAT.md](docs/MONEY_FILE_FORMAT.md).
+- **Backups too** — Money's `.mbf` backups are Microsoft Cabinet archives around the same database; extract one with `cabextract` and import the file it contains.
+- **Local-only analysis** — the AI assistant and LLM receipt recognition are gone. In their place, a deterministic analysis endpoint reports totals, top categories, largest expenses, recurring payments and unusual spending, computed entirely on your machine.
+- **Free software** — Honey Ledger moved from MIT to the GNU GPL v3.0 or later.
 
 ## Features
 
-- **Desktop Only** — Native Electron application for Windows, macOS, and Linux. No browser needed.
-- **Self-Contained** — Go backend runs as a child process inside the Electron app.
-- **System Tray** — Minimize to tray, global keyboard shortcuts, desktop notifications.
-- **Auto-Login** — Single-user mode skips the login screen automatically.
-- **Automatic Backups** — Scheduled SQLite snapshots with configurable retention.
-- **Automatic Updates** — Packaged builds check for new releases in the background and
-  install them on quit (AppImage and Windows installer).
+### Ledger
+
+- **Accounts** — checking, savings, credit card, cash, investment, loan and more, with sub-accounts, hiding, reordering, and a per-account currency.
+- **Transaction Types** — expense, income, transfer, and balance modification.
+- **Categories** — primary and secondary levels, with presets for common categories and custom trees.
+- **Tags & Tag Groups** — cross-cutting labels with colour grouping.
+- **Transaction Pictures** — attach receipt images to a transaction.
+- **Geotagged Transactions** — record where a transaction happened and see it on a map.
+- **Draft Auto-Save** — the transaction form is preserved if you navigate away.
+- **Account Reconciliation** — statement support for balancing an account.
+- **Shared Expenses** — split an expense with up to 20 people, see who owes whom in either direction, record settlements, and filter the transaction list down to shared expenses.
+
+### Automation
+
+- **Scheduled Transactions** — recurring transactions with built-in cron scheduling.
+- **Transaction Templates** — save and reuse common transaction patterns.
+- **Automatic Backups** — scheduled SQLite snapshots with configurable retention.
+
+### Reporting & Analysis
+
+- **Overview Home Page** — balances, recent activity, and month-to-date totals at a glance.
+- **Statistics** — 18 chart types over three analyses: expense and income by account, primary or secondary category; total and net income, expense, inflows, outflows and cash flow over time; and asset trends including total assets, total liabilities and net worth. Every figure is converted into your base currency.
+- **Insights Explorer** — build custom queries over your own data and visualise the result as a chart or table.
+- **Transaction Review** — points out possible duplicate charges, unusual amounts, and repeating subscriptions, with dismissible findings that link to the transaction they came from.
+
+### Import & Export
+
+- **Microsoft Money** — `.mny` data files read directly (see [Migrating from Microsoft Money](docs/USER_GUIDE.md#migrating-from-microsoft-money-or-quicken)).
+- **Quicken** — QFX, QIF (Y/M/D, M/D/Y, D/M/Y), IIF; `.qdf` files are recognised and explained.
+- **Generic** — CSV, TSV, SSV, Excel (`.xlsx`, `.xls`), with column mapping and custom transformation scripts.
+- **Open formats** — OFX, Camt.052/053, MT940 (SWIFT), GnuCash XML, Firefly III, Beancount.
+- **Regional exports** — Alipay (app and web CSV), WeChat Pay (app and export CSV/XLSX), JD.com Finance, Feidee MyMoney.
+- **Export** — filtered transactions to CSV or TSV.
+
+### Currencies & Rates
+
+- **Multi-Currency** — 159 currencies, with a per-account and per-user currency.
+- **Exchange Rates** — 15 central-bank and public rate feeds, automatic updates, manual overrides, and on-demand lookup.
+
+### Analysis & Integrations
+
+- **Financial Analysis** — a local, rule-based report (`POST /api/v1/analysis.json`): totals per currency, top categories, largest expenses, recurring payments, unusual spending, account balances and shared expenses. No AI, no model endpoint, nothing sent off the machine.
+- **MCP Support** — Model Context Protocol server so external tools can read your ledger with a scoped token.
+- **REST API & Tokens** — the whole app is an HTTP API; generate tokens for automation.
+
+### Desktop
+
+- **Desktop Only** — native Electron application for Windows, macOS and Linux. No browser needed.
+- **System Tray** — minimise to tray, with desktop notifications.
+- **Global Shortcuts** — quick-add a transaction (`Ctrl/Cmd+Shift+N`) or focus the window (`Ctrl/Cmd+Shift+M`).
+- **Auto-Login** — single-user mode skips the login screen.
+- **Application Lock** — a PIN lock over a running session.
+- **Dark Mode** — full dark theme with automatic system detection.
+- **Automatic Updates** — packaged builds check for new releases and install them on quit.
+- **Admin Tool** — a standalone Fyne desktop tool for database management, users and diagnostics.
+
+### Security
+
+- **Two-Factor Authentication** — TOTP with recovery codes.
+- **OAuth2 / OIDC** — single sign-on with an external identity provider, linkable and unlinkable per user.
+- **Sessions** — see and revoke active sessions.
+- **Per-User Feature Restrictions** — 16 capabilities an administrator can switch off for a user, from changing a password to importing or exporting.
+
+### Data & Storage
+
 - **Multiple Databases** — SQLite (default), MySQL, or PostgreSQL.
-- **Dark Mode** — Full dark theme support with automatic system detection.
-- **Multi-Currency** — 150+ currencies with automatic exchange rate updates from 16 data sources.
-- **Multi-Language** — 19 languages including English, German, French, Spanish, Italian, Japanese, Korean, Chinese, and more.
-- **Multi-Timezone** — Per-user timezone configuration with timezone-aware statistics.
-- **Data Import** — Import from CSV, TSV, Excel, OFX, QFX, QIF, IIF, Camt.052/053, MT940, GnuCash, Firefly III, Beancount, and more.
-- **Data Export** — Export transactions to CSV, TSV, or ZIP archives.
-- **Backups** — Create, download, restore, and manage consistent SQLite database snapshots.
-- **AI Receipt Recognition** — Extract transaction data from receipt images using LLM providers (OpenAI, Anthropic, Google AI, Ollama, LM Studio, and others).
-- **MCP Support** — Model Context Protocol integration for AI agent access to your financial data.
-- **Scheduled Transactions** — Recurring transaction automation via built-in cron jobs.
-- **Transaction Templates** — Save and reuse common transaction patterns.
-- **Shared Expenses** — Split an expense with up to 20 people, see who owes whom
-  in either direction, record settlements, and filter the transaction list down
-  to the expenses you share.
-- **Transaction Review** — Points out possible duplicate charges, unusual amounts,
-  and repeating subscriptions, with dismissible findings that link to the
-  transaction they came from.
-- **AI Assistant API** — Ask questions about your finances through
-  `POST /api/v1/ai/ask.json` using your own model, with only an aggregated,
-  de-identified summary leaving the machine.
-- **Insights Explorer** — Custom data queries with chart and table visualization.
-- **Account Reconciliation** — Reconciliation statement support for account balancing.
-- **Map Integration** — Geotagging with 12 map providers (OpenStreetMap, Google Maps, Baidu, Amap, and others).
-- **Cloud Settings Sync** — Sync application preferences across sessions.
-- **API Tokens** — Generate tokens for programmatic access and automation.
+- **Backups** — create, download, restore and delete consistent snapshots.
+- **Cloud Settings Sync** — sync application preferences across sessions.
+- **Data Management** — clear all data, and choose where avatars and receipts are stored, including your own S3-compatible object storage.
+
+### Internationalisation
+
+- **Multi-Language** — 19 languages including English, German, French, Spanish, Italian, Japanese, Korean, and Chinese.
+- **Multi-Timezone** — 139 timezones, with per-user timezone configuration and timezone-aware dates and statistics.
+
 
 ## Quick Start
 
@@ -95,6 +161,7 @@ go run .
 | [User Guide](docs/USER_GUIDE.md) | End-user guide for all application features, including shared expenses and transaction review |
 | [API Reference](docs/API_REFERENCE.md) | REST API endpoint documentation |
 | [Architecture Overview](docs/ARCHITECTURE.md) | System design, project structure, and technology stack |
+| [Microsoft Money File Format](docs/MONEY_FILE_FORMAT.md) | How a Money data file is laid out, and how the importer reads it |
 | [Development Guide](docs/DEVELOPMENT.md) | Setting up a development environment, building, testing |
 | [Electron Desktop App](docs/ELECTRON.md) | Desktop application build, packaging, and usage |
 | [CLI Reference](docs/CLI_REFERENCE.md) | Command-line interface for server, database, and user management |

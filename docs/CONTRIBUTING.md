@@ -290,7 +290,7 @@ ID, both `package.json` versions, and the copyright holder in agreement.
 the two-line SPDX header (after the shebang, when there is one).
 `check-no-telemetry.sh` fails if an analytics or crash-reporting host appears in
 `src/`, `electron/`, `pkg/`, or `cmd/`. Extend its pattern list only for
-services the user configures themselves (LLM, map, mail, and storage providers
+services the user configures themselves (map, mail, and storage providers
 are out of scope).
 
 ---

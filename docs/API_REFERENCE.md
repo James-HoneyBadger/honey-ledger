@@ -28,12 +28,11 @@ The machine-readable OpenAPI document is generated at [`openapi.json`](./openapi
 - [Transaction Tags](#transaction-tags)
 - [Transaction Templates](#transaction-templates)
 - [Insights Explorers](#insights-explorers)
-- [AI Assistant](#ai-assistant)
+- [Financial Analysis](#financial-analysis)
 - [Shared Expenses](#shared-expenses)
 - [Exchange Rates](#exchange-rates)
 - [Data Management](#data-management)
 - [Backups](#backups)
-- [LLM](#llm)
 - [System](#system)
 - [Health Check](#health-check)
 - [MCP (Model Context Protocol)](#mcp-model-context-protocol)
@@ -922,46 +921,30 @@ POST /api/v1/insights/review/restore.json
 
 ---
 
-## AI Assistant
+## Financial Analysis
 
-Answers a question about the user's finances with the configured language model.
+Analyses the user's finances with local, rule-based heuristics. No data leaves
+the machine and no model is involved.
 
 ```
-POST /api/v1/ai/ask.json
+POST /api/v1/analysis.json
 ```
 
 ```json
-{
-  "question": "How much did I spend on dining this year?",
-  "months": 12
-}
+{ "months": 12 }
 ```
 
-The endpoint is disabled unless `[llm] ai_assistant = true` and a provider is
-configured in `[llm_ai_assistant]`.
+`months` bounds the period (1–60, default 12). The response contains:
 
-Only an aggregated summary leaves the machine, and every response describes what
-was sent in its `privacyNote` field:
+- `totals` — income, expense, net and count per currency,
+- `topCategories` — the eight largest expense categories,
+- `largestExpenses` — the ten largest expenses in the period,
+- `recurringPayments` — detected subscription-like expenses,
+- `unusualExpenses` — expenses far above the account's usual spending,
+- `accounts` — account balances, and
+- `sharedExpenses` — outstanding shared-expense balances.
 
-- income and expense totals per currency, plus the transaction count
-- expense totals per category name, capped at the eight largest
-- account balances labelled `Account 1`, `Account 2`, … with the account category
-- shared expense balances labelled `Person 1`, `Person 2`, …
-
-Account names, people names, transaction descriptions, tags and pictures are
-never included. Amounts are integers in the smallest currency unit.
-
-```json
-{
-  "answer": "You spent 75.00 USD on dining.",
-  "provider": "openai_compatible",
-  "model": "<model id>",
-  "startTime": 1761864428,
-  "endTime": 1793400428,
-  "transactionCount": 2,
-  "privacyNote": "Only the aggregated summary ..."
-}
-```
+Amounts are integers in the smallest currency unit.
 
 ---
 
@@ -1214,20 +1197,6 @@ POST /api/v1/backups/delete.json
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `fileName` | string | Yes | Backup filename |
-
----
-
-## LLM
-
-### Recognize Receipt Image
-
-```
-POST /api/v1/llm/transactions/recognize_receipt_image.json
-```
-
-Multipart form upload with a receipt image. Returns extracted transaction data (amount, date, description, category suggestion).
-
-Requires `transaction_from_ai_image_recognition = true` in configuration.
 
 ---
 

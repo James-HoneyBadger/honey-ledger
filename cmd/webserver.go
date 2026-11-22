@@ -411,9 +411,6 @@ func startWebServer(c *core.CliContext) error {
 			apiV1Route.POST("/insights/explorers/move.json", bindApi(api.InsightsExplorers.InsightsExplorerMoveHandler))
 			apiV1Route.POST("/insights/explorers/delete.json", bindApi(api.InsightsExplorers.InsightsExplorerDeleteHandler))
 
-			// AI assistant
-			apiV1Route.POST("/ai/ask.json", bindApi(api.AIAssistant.AskHandler))
-
 			// Shared expenses
 			apiV1Route.GET("/transactions/splits/index.json", bindApi(api.TransactionSplits.TransactionSplitIndexHandler))
 			apiV1Route.GET("/transactions/splits/list.json", bindApi(api.TransactionSplits.TransactionSplitListHandler))
@@ -430,12 +427,8 @@ func startWebServer(c *core.CliContext) error {
 			apiV1Route.POST("/insights/review/dismiss.json", bindApi(api.TransactionReviews.TransactionReviewDismissHandler))
 			apiV1Route.POST("/insights/review/restore.json", bindApi(api.TransactionReviews.TransactionReviewRestoreHandler))
 
-			// Large Language Models
-			if config.ReceiptImageRecognitionLLMConfig != nil && config.ReceiptImageRecognitionLLMConfig.LLMProvider != "" {
-				if config.TransactionFromAIImageRecognition {
-					apiV1Route.POST("/llm/transactions/recognize_receipt_image.json", bindApi(api.LargeLanguageModels.RecognizeReceiptImageHandler))
-				}
-			}
+			// Financial analysis (local, rule-based report)
+			apiV1Route.POST("/analysis.json", bindApi(api.FinancialAnalysis.AnalyzeHandler))
 
 			// Exchange Rates
 			apiV1Route.GET("/exchange_rates/latest.json", bindApi(api.ExchangeRates.LatestExchangeRateHandler))

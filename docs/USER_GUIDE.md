@@ -21,7 +21,7 @@ A complete guide to using Honey Ledger for personal finance management.
 - [Transaction Review](#transaction-review)
 - [Shared Expenses](#shared-expenses)
 - [Exchange Rates](#exchange-rates)
-- [AI Receipt Recognition](#ai-receipt-recognition)
+- [Financial Analysis](#financial-analysis)
 - [Application Settings](#application-settings)
 - [User Profile & Security](#user-profile--security)
 - [Two-Factor Authentication](#two-factor-authentication)
@@ -381,6 +381,18 @@ Navigate to **Statistics** for detailed analysis:
 - **Date range** — filter by custom date ranges
 - **Account filters** — include/exclude specific accounts
 
+Every figure is converted into your base currency, so accounts held in different
+currencies still add up.
+
+### Supported Chart Types
+
+| Analysis | Chart types |
+|----------|-------------|
+| Categorical | Expense by account, primary category, or secondary category; income by account, primary category, or secondary category; inflows by account; outflows by account; total assets; total liabilities |
+| Trend | Total income, total expense, total inflows, total outflows, net income, net cash flow |
+| Asset trends | Account total assets, account total liabilities, net worth |
+| Special | Overview — a mixed summary of the month |
+
 ---
 
 ## Insights Explorer
@@ -498,26 +510,29 @@ The exchange rate page shows all available currency pairs and their current rate
 
 ---
 
-## AI Receipt Recognition
+## Financial Analysis
 
-Extract transaction data from receipt photographs using AI.
+Honey Ledger can analyse your ledger locally, with deterministic rules — no AI,
+no model endpoint, and nothing sent off the machine. The analysis reports:
 
-### Prerequisites
+- income, expense and net totals per currency,
+- the top expense categories,
+- the largest expenses in the period,
+- recurring (subscription-like) payments,
+- unusually large expenses,
+- account balances, and
+- outstanding shared-expense balances.
 
-- An LLM provider must be configured by the administrator (see [Configuration Reference](CONFIGURATION.md)).
-- The feature must be enabled in the configuration (`transaction_from_ai_image_recognition = true`).
+The analysis has no screen of its own: it is an API endpoint,
+`POST /api/v1/analysis.json`, meant for scripts and external tools. Send an
+optional `months` field (1–60, default 12) to bound the period:
 
-### Usage
+```json
+{ "months": 6 }
+```
 
-1. When adding a new transaction, click the **AI Recognition** button.
-2. Upload or photograph a receipt.
-3. The AI extracts: amount, date, merchant/description, and category.
-4. Review and adjust the extracted data.
-5. Save the transaction.
-
-### Supported Providers
-
-OpenAI (GPT-4o), Anthropic (Claude), Google AI (Gemini), OpenRouter, Ollama, LM Studio, and OpenAI/Anthropic-compatible APIs.
+See the [API Reference](API_REFERENCE.md#financial-analysis) for the response
+shape.
 
 ---
 

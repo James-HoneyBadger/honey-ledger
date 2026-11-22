@@ -22,8 +22,6 @@ configure. Nothing is sent in the background on its own.
 |---------|-------------|------|------------|
 | Exchange rates | The `[exchange_rates] data_source` you choose (European Central Bank by default) | When rates are fetched or refreshed | Set `data_source = user_custom` |
 | Map tiles | The selected `[map] map_provider` tile server, directly or through the optional backend proxy | Only while a map is displayed | Leave `map_provider` blank |
-| Receipt recognition | The `[llm_image_recognition]` provider | Only when you run recognition | `transaction_from_ai_image_recognition = false` |
-| AI assistant | The `[llm_ai_assistant]` provider | Only when you ask a question | `ai_assistant = false` |
 | Mail | Your `[mail]` SMTP server | Only when a mail action runs | `enable_smtp = false` |
 | Object storage | Your MinIO or WebDAV server | Only when a picture or avatar is saved | Keep `[storage] type = local_filesystem` |
 | OAuth2/OIDC login | Your identity provider | Only when you sign in through it | `enable_oauth2_auth = false` |
@@ -33,18 +31,13 @@ A remote MySQL or PostgreSQL database is contacted whenever you configure one;
 the default SQLite database is a local file. Cloud Settings Sync stores
 preferences in the application database and sends them nowhere else.
 
-### Optional third-party model access
+### No third-party model access
 
-Two features can send data to a model endpoint that you configure yourself; both
-are disabled by default and send nothing on their own:
-
-- **Receipt image recognition** sends the picture you choose to the configured
-  `[llm_image_recognition]` provider.
-- **AI assistant** sends an aggregated summary to the configured
-  `[llm_ai_assistant]` provider: totals per currency, expense totals per category
-  name, account balances and shared expense balances labelled by position. Account
-  names, people names, descriptions, tags and pictures are never sent, and every
-  response reports what was included in its `privacyNote` field.
+Honey Ledger has no built-in large language model integration. Receipt
+recognition and the AI assistant were removed in 2.0; financial analysis is
+performed locally with deterministic rules (`POST /api/v1/analysis.json`) and
+never leaves the machine. If you want to use your own model, export your data or
+connect a local tool through the MCP server.
 
 No telemetry, analytics or crash reporting is built in; `scripts/check-no-telemetry.sh`
 enforces that in CI.
@@ -121,8 +114,8 @@ Reporters are credited in the release notes unless they ask to stay anonymous.
   limitation rather than a vulnerability
 - Automatic login in single-user desktop mode, which is an intentional feature;
   it requires exactly one account and is restricted to loopback clients
-- Vulnerabilities in third-party services the user configures (mail, LLM
-  providers, map tiles, MinIO, WebDAV)
+- Vulnerabilities in third-party services the user configures (mail,
+  map tiles, MinIO, WebDAV)
 - Reports produced solely by automated scanners without a demonstrated
   exploitation path
 

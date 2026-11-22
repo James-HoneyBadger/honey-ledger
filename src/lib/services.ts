@@ -27,7 +27,6 @@ import {
     DEFAULT_EXPORT_API_TIMEOUT,
     DEFAULT_IMPORT_API_TIMEOUT,
     DEFAULT_CLEAR_ALL_TRANSACTIONS_API_TIMEOUT,
-    DEFAULT_LLM_API_TIMEOUT,
     GOOGLE_MAP_JAVASCRIPT_URL,
     BAIDU_MAP_JAVASCRIPT_URL,
     AMAP_JAVASCRIPT_URL
@@ -190,9 +189,6 @@ import type {
 import type {
     UserApplicationCloudSettingsUpdateRequest
 } from '@/models/user_app_cloud_setting.ts';
-import type {
-    RecognizedReceiptImageResponse
-} from '@/models/large_language_model.ts';
 
 import {
     getCurrentToken,
@@ -892,14 +888,6 @@ export default {
     },
     deleteInsightsExplorer: (req: InsightsExplorerDeleteRequest): ApiResponsePromise<boolean> => {
         return axios.post<ApiResponse<boolean>>('v1/insights/explorers/delete.json', req);
-    },
-    recognizeReceiptImage: ({ imageFile, cancelableUuid }: { imageFile: File, cancelableUuid?: string }): ApiResponsePromise<RecognizedReceiptImageResponse> => {
-        return axios.postForm<ApiResponse<RecognizedReceiptImageResponse>>('v1/llm/transactions/recognize_receipt_image.json', {
-            image: imageFile
-        }, {
-            timeout: DEFAULT_LLM_API_TIMEOUT,
-            cancelableUuid: cancelableUuid
-        } as ApiRequestConfig);
     },
     getLatestExchangeRates: (param: { ignoreError?: boolean }): ApiResponsePromise<LatestExchangeRateResponse> => {
         return axios.get<ApiResponse<LatestExchangeRateResponse>>('v1/exchange_rates/latest.json', {

@@ -89,16 +89,6 @@
                                         />
                                     </v-col>
 
-                                    <v-col cols="12" class="py-0 mt-1 mb-4">
-                                        <div class="d-flex align-center justify-space-between flex-wrap">
-                                            <v-spacer/>
-                                            <router-link class="text-primary" to="/forgetpassword"
-                                                         :class="{ 'disabled': !isUserForgetPasswordEnabled() || loggingInByPassword || loggingInByOAuth2 || verifying }">
-                                                {{ tt('Forget Password?') }}
-                                            </router-link>
-                                        </div>
-                                    </v-col>
-
                                     <v-col cols="12">
                                         <v-btn block :disabled="inputIsEmpty || loggingInByPassword || loggingInByOAuth2 || verifying"
                                                @click="login" v-if="isInternalAuthEnabled() && !show2faInput">
@@ -122,14 +112,6 @@
                                             {{ oauth2LoginDisplayName }}
                                             <v-progress-circular indeterminate size="22" class="ms-2" v-if="loggingInByOAuth2"></v-progress-circular>
                                         </v-btn>
-                                    </v-col>
-
-                                    <v-col cols="12" class="text-center text-base" v-if="isInternalAuthEnabled()">
-                                        <span class="me-1">{{ tt('Don\'t have an account?') }}</span>
-                                        <router-link class="text-primary" to="/signup"
-                                                     :class="{ 'disabled': !isUserRegistrationEnabled() || loggingInByPassword || loggingInByOAuth2 || verifying }">
-                                            {{ tt('Create an account') }}
-                                        </router-link>
                                     </v-col>
                                 </v-row>
                             </v-form>
@@ -183,8 +165,6 @@ import { KnownErrorCode } from '@/consts/api.ts';
 
 import { generateRandomUUID } from '@/lib/misc.ts';
 import {
-    isUserRegistrationEnabled,
-    isUserForgetPasswordEnabled,
     isUserVerifyEmailEnabled,
     isInternalAuthEnabled,
     isOAuth2Enabled,
@@ -235,9 +215,10 @@ const isDarkMode = computed<boolean>(() => theme.global.name.value === ThemeType
 
 const autoLoggingIn = ref<boolean>(false);
 
-// Attempt auto-login in desktop mode when enabled
+// A Honey Ledger installation owns exactly one user, so the app signs that user
+// in automatically instead of asking for an account.
 onMounted(() => {
-    if (isDesktopAutoLoginEnabled() && window.honeyLedger?.isDesktopApp) {
+    if (isDesktopAutoLoginEnabled()) {
         autoLoggingIn.value = true;
         rootStore.autoLogin().then(authResponse => {
             doAfterLogin(authResponse);

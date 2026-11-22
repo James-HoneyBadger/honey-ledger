@@ -5,8 +5,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
 	"os"
 
 	"github.com/James-HoneyBadger/honey-ledger/pkg/avatars"
@@ -226,20 +224,10 @@ func ensureDefaultUser(c *core.CliContext, isDisableBootLog bool) error {
 	}
 
 	if !isDisableBootLog {
-		log.BootInfof(c, "[initializer.ensureDefaultUser] created default user \"%s\" (uid:%d)", defaultUser.Username, defaultUser.Uid)
-
-		// The password is printed to the console only. Routing it through the
-		// logger would also persist it in the log file on disk.
-		printDefaultUserPassword(os.Stdout, defaultUser.Username, generatedPassword)
+		log.BootInfof(c, "[initializer.ensureDefaultUser] created the local user \"%s\" (uid:%d); the app signs it in automatically", defaultUser.Username, defaultUser.Uid)
 	}
 
 	return nil
-}
-
-func printDefaultUserPassword(w io.Writer, username string, password string) {
-	fmt.Fprintf(w, "[Honey Ledger] IMPORTANT: default user \"%s\" was created with password \"%s\"\n", username, password)
-	fmt.Fprintf(w, "[Honey Ledger] This password is shown once and is not written to the log file.\n")
-	fmt.Fprintf(w, "[Honey Ledger] Change it in the app, or reset it with: honey-ledger userdata user-modify-password --username %s --password <new-password>\n", username)
 }
 
 func getConfigWithoutSensitiveData(config *settings.Config) *settings.Config {

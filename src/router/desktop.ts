@@ -8,10 +8,7 @@ import { isUserLogined, isUserUnlocked } from '@/lib/userstate.ts';
 
 import MainLayout from '@/views/desktop/MainLayout.vue';
 import LoginPage from '@/views/desktop/LoginPage.vue';
-import SignUpPage from '@/views/desktop/SignupPage.vue';
 import VerifyEmailPage from '@/views/desktop/VerifyEmailPage.vue';
-import ForgetPasswordPage from '@/views/desktop/ForgetPasswordPage.vue';
-import ResetPasswordPage from '@/views/desktop/ResetPasswordPage.vue';
 import OAuth2CallbackPage from '@/views/desktop/OAuth2CallbackPage.vue';
 import UnlockPage from '@/views/desktop/UnlockPage.vue';
 
@@ -39,7 +36,30 @@ import AppSettingsPage from '@/views/desktop/app/AppSettingsPage.vue';
 import ExchangeRatesListPage from '@/views/desktop/exchangerates/ListPage.vue';
 import AboutPage from '@/views/desktop/AboutPage.vue';
 
-function checkLogin(): NavigationGuardReturn {
+async function autoLoginIfPossible(): Promise<boolean> {
+    const { isDesktopAutoLoginEnabled } = await import('@/lib/server_settings.ts');
+
+    if (!isDesktopAutoLoginEnabled()) {
+        return false;
+    }
+
+    const { useRootStore } = await import('@/stores/index.ts');
+
+    try {
+        await useRootStore().autoLogin();
+        return isUserLogined();
+    } catch {
+        return false;
+    }
+}
+
+async function checkLogin(): Promise<NavigationGuardReturn> {
+    // A Honey Ledger installation owns a single user, so a missing session is
+    // renewed silently instead of sending the user to a login screen.
+    if (!isUserLogined()) {
+        await autoLoginIfPossible();
+    }
+
     if (!isUserLogined()) {
         return {
             path: '/login',
@@ -232,8 +252,7 @@ const router = createRouter({
         },
         {
             path: '/signup',
-            component: SignUpPage,
-            beforeEnter: checkNotLogin
+            redirect: '/'
         },
         {
             path: '/verify_email',
@@ -246,15 +265,11 @@ const router = createRouter({
         },
         {
             path: '/forgetpassword',
-            component: ForgetPasswordPage,
-            beforeEnter: checkNotLogin
+            redirect: '/'
         },
         {
             path: '/resetpassword',
-            component: ResetPasswordPage,
-            props: route => ({
-                token: route.query['token']
-            })
+            redirect: '/'
         },
         {
             path: '/oauth2_callback',

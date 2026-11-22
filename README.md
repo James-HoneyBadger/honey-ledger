@@ -1,17 +1,49 @@
 # Honey Ledger
 
-**A local-first personal finance desktop app that reads the file formats your bank and your old software give you, reports on them properly, and never phones home.**
+## Open your Microsoft Money file on any computer
+
+**No Windows. No copy of Money. No converter. No upload.** Honey Ledger reads the `.mny` database directly — including ledgers written decades ago.
 
 [![CI](https://github.com/James-HoneyBadger/honey-ledger/actions/workflows/ci.yml/badge.svg)](https://github.com/James-HoneyBadger/honey-ledger/actions/workflows/ci.yml)
 **Free software** (GPL-3.0-or-later) · **Windows**, **macOS**, **Linux** · **19 languages** · **159 currencies**
 
+A local-first personal finance desktop app that reads the file formats your bank and your old software give you, reports on them properly, and never phones home.
+
 Honey Ledger is a self-contained Electron desktop application for individuals who want full control over their financial data. The Go backend runs inside the app and everything you enter lives in a database you control — SQLite on your own machine by default, or a MySQL/PostgreSQL server you point it at. There is no account to create and no server to run. Network access is limited to the features that need it: exchange-rate downloads, map tiles, SMTP mail, your own object storage, an identity provider if you enable OAuth2/OIDC login, and update checks. None of them carry telemetry and every one is optional: leave them unconfigured or switch them off and the app runs fully offline. Financial analysis is local and rule-based; there is no built-in AI and no model endpoint. [SECURITY.md](SECURITY.md) lists every outbound connection with the setting that turns it off, and the [documentation](docs/) describes the switches in detail.
+
+## Microsoft Money, read natively
+
+Microsoft Money was discontinued in 2009 and support ended in 2011. *Money Plus Sunset* still opens the files, but only on Windows — and several international editions of Sunset could never read non-US data files at all. Fifteen years on, a great many people still hold a `.mny` file containing a decade or two of accounts, transactions, splits and categories, with nowhere modern to put it.
+
+The obstacle is the file. A `.mny` is a Jet 4 database in a variant the engine calls **MSISAM**, and that closes every ordinary door:
+
+- **Jet and Access drivers refuse it**, because the header does not name their engine.
+- **LibreOffice Base refuses it too** — it reads Access databases through those very drivers.
+- **Quicken, GnuCash, HomeBank and Moneydance expect QIF, OFX or CSV**, not the database itself.
+- **Producing that interchange file normally means running Money**, which is exactly what someone on macOS, on Linux, or holding only a backup file cannot do.
+
+Honey Ledger removes the step instead of documenting it. In the transaction list choose **Import → Microsoft Money File Format → Microsoft Money Data File (MNY)**, pick the file, and it reads the database itself, in-process, on every platform the app runs on:
+
+| What comes across | Detail |
+|---|---|
+| **Accounts** | with their currencies and account types |
+| **Categories** | primary and secondary, nested the way Money nests them |
+| **Transactions** | expense and income entries, with memos carried over as descriptions |
+| **Transfers** | one transaction per pair of accounts, not two unrelated rows |
+| **Splits** | one transaction per split, allocated to the right categories |
+| **Backups (`.mbf`)** | Money's backups are Microsoft Cabinet archives around the same database — unpack with `cabextract`, then import the file inside |
+
+**Verified end to end against a real Money Sunset database: 165 accounts, 195 categories, 155 currencies and 39,293 transactions** — decoded from the binary and imported with no external program, no Windows, and no network involved.
+
+Being straight about the limits, because an import you can trust matters more than one that claims everything: investment activity (share lots and prices) has no counterpart in the target ledger and is skipped; Money 2000 and earlier use an older 2048-byte page layout that is not read yet; and a password-protected file is reported as exactly that rather than failing silently. Quicken's own `.qdf` is likewise proprietary and still out of reach — selecting one explains which QIF/OFX export to use instead of returning a generic "unsupported file type".
+
+The entire format — the header, the scrambled block that hides the database key, page types, table definitions and the row layout — is written down in [docs/MONEY_FILE_FORMAT.md](docs/MONEY_FILE_FORMAT.md), because a format this close to extinction deserves a record that outlives the software that made it.
 
 ## What it does best
 
 | | |
 |---|---|
-| **Opens Microsoft Money files directly** | A `.mny` file is Microsoft's own MSISAM database, and Quicken, GnuCash, HomeBank and Moneydance all expect an interchange file instead — producing one means running a working copy of Money, fifteen years after it was discontinued. Honey Ledger reads the database itself, in-process, on any platform it runs on: accounts, currencies, categories, transactions, transfers and splits, with no export step and no unsupported Windows install. Plus QFX, QIF, OFX, IIF, CSV/TSV/SSV, Excel, Camt.052/053, MT940, GnuCash, Firefly III, Beancount, Alipay, WeChat Pay, JD.com and Feidee — 35 import entries in the dialog. |
+| **Microsoft Money files, natively** | The headline feature — see [above](#microsoft-money-read-natively). A `.mny` database read in-process on Windows, macOS and Linux: accounts, currencies, categories, transactions, transfers, splits, and even `.mbf` backups, with no export step and no Windows install. Plus QFX, QIF, OFX, IIF, CSV/TSV/SSV, Excel, Camt.052/053, MT940, GnuCash, Firefly III, Beancount, Alipay, WeChat Pay, JD.com and Feidee — 27 import formats in the dialog. |
 | **Your data stays yours** | SQLite on your disk by default, no account, no cloud, no telemetry. Every outbound connection is documented with the switch that turns it off; unconfigure them all and the app is fully offline. |
 | **Reporting that answers questions** | 18 chart types over categorical, trend and asset analyses — spend by category, income by account, cash flow, net worth over time — every figure converted into your base currency. An insights explorer builds your own queries, and transaction review flags probable duplicates, odd amounts and subscriptions. |
 | **Multi-currency for real** | 159 currencies with a currency per account and per user, 15 central-bank and public rate feeds, manual overrides, and reports that add unlike currencies up correctly. |
@@ -23,8 +55,7 @@ Honey Ledger is a self-contained Electron desktop application for individuals wh
 
 ## What's new in 2.0
 
-- **Microsoft Money import, natively** — point Honey Ledger at a Money `.mny` file and it reads the database itself: accounts with their currencies, categories as Money nests them, expense and income transactions, one transfer per pair of accounts, and one transaction per split. No Windows, no copy of Money, no converter, no upload. The format is documented in [docs/MONEY_FILE_FORMAT.md](docs/MONEY_FILE_FORMAT.md).
-- **Backups too** — Money's `.mbf` backups are Microsoft Cabinet archives around the same database; extract one with `cabextract` and import the file it contains.
+- **Microsoft Money files, read natively — the headline.** Point Honey Ledger at a Money `.mny` file and it decodes the Jet/MSISAM database itself: accounts with their currencies, categories as Money nests them, expense and income transactions, one transfer per pair of accounts, and one transaction per split. Verified against a real Money Sunset database — 165 accounts, 195 categories and 39,293 transactions. No Windows, no copy of Money, no converter, no upload. Money's `.mbf` backups work too — they are Microsoft Cabinet archives around the same database, so `cabextract` one and import the file inside. Format reference: [docs/MONEY_FILE_FORMAT.md](docs/MONEY_FILE_FORMAT.md).
 - **Local-only analysis** — the AI assistant and LLM receipt recognition are gone. In their place, a deterministic analysis endpoint reports totals, top categories, largest expenses, recurring payments and unusual spending, computed entirely on your machine.
 - **Free software** — Honey Ledger moved from MIT to the GNU GPL v3.0 or later.
 

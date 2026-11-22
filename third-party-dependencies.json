@@ -376,5 +376,12 @@
         "url": "https://www.freepik.com/free-vector/meeting-scenes-office-collection_4085819.htm",
         "license": "Freepik Free License (attribution required, not covered by the GPL)",
         "licenseUrl": "https://www.freepik.com/legal/terms-of-use"
+    },
+    {
+        "name": "Go Cabinet",
+        "copyright": "Copyright (c) 2026 Adam Bouqdib",
+        "url": "https://github.com/abemedia/go-cabinet",
+        "license": "MIT License",
+        "licenseUrl": "https://github.com/abemedia/go-cabinet/blob/v0.3.0/LICENSE"
     }
 ]

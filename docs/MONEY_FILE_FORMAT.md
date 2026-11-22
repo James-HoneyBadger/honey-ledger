@@ -45,7 +45,7 @@ which are investments that hold shares rather than money. See
 | Money version | Notes |
 |---------------|-------|
 | Money 2001 through Money Plus 2008, including the Sunset edition | The Jet 4 / 4096-byte page layout, which this package reads |
-| Backups (`.mbf`) | A Microsoft Cabinet around the same database; unpack it with `cabextract` |
+| Backups (`.mbf`) | A Microsoft Cabinet around the same database. Honey Ledger reads the cabinet itself (stored, MSZIP or LZX) and imports the database inside |
 | Money 2000 and earlier | Not supported yet: those files use the older 2048-byte page layout |
 | Password protected files | Reported as `ErrEncryptedDatabase`; remove the password in Money first |
 
@@ -56,8 +56,17 @@ which are investments that hold shares rather than money. See
 | `.mny` | The database itself |
 | `.mbf` | A Microsoft Cabinet (`MSCF`, usually LZX compressed) holding one `.mny` member |
 
-A backup can be unpacked with `cabextract <file>.mbf`, which writes the database
-under a temporary name.
+Both are imported directly. A backup is expanded in memory: the cabinet member is
+recognised by its `MSISAM` header rather than by its name, because Money names the
+member after the backup (`mbf943E.tmp`) rather than after the file it contains,
+and it is then read exactly like a `.mny`. Extraction refuses an archive whose
+database declares more than 512 MiB and one holding more than 32 members, so a
+crafted cabinet cannot exhaust memory; a cabinet that is damaged or holds no Money
+database is reported as `ErrImportMicrosoftMoneyBackupFileNotReadable`.
+
+A backup is compressed, but a large ledger can still exceed the default 10 MiB
+upload limit (`[data] max_import_file_size`); raise that setting for a `.mbf` that
+is refused for size rather than for content.
 
 ## Header page
 

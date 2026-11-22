@@ -59,6 +59,8 @@ func GetTransactionDataImporter(fileType string) (converter.TransactionDataImpor
 		return iif.IifTransactionDataFileImporter, nil
 	} else if fileType == "microsoft_money_mny" {
 		return msmoney.MicrosoftMoneyTransactionDataFileImporter, nil
+	} else if fileType == "microsoft_money_mbf" {
+		return msmoney.MicrosoftMoneyTransactionDataFileImporter, nil
 	} else if fileType == "quicken_qdf" {
 		return quicken.QuickenTransactionDataFileImporter, nil
 	} else if fileType == "camt052" {

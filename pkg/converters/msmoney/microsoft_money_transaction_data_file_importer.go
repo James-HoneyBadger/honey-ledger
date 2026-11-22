@@ -34,6 +34,19 @@ func IsMicrosoftMoneyDataFile(data []byte) bool {
 // ParseImportedData returns the imported data by parsing the Microsoft Money
 // transaction data
 func (c *microsoftMoneyTransactionDataFileImporter) ParseImportedData(ctx core.Context, user *models.User, data []byte, defaultTimezone *time.Location, additionalOptions converter.TransactionDataImporterOptions, accountMap map[string]*models.Account, expenseCategoryMap map[string]map[string]*models.TransactionCategory, incomeCategoryMap map[string]map[string]*models.TransactionCategory, transferCategoryMap map[string]map[string]*models.TransactionCategory, tagMap map[string]*models.TransactionTag) (models.ImportedTransactionSlice, []*models.Account, []*models.TransactionCategory, []*models.TransactionCategory, []*models.TransactionCategory, []*models.TransactionTag, error) {
+	// A backup (.mbf) is a cabinet wrapping the database, so it is unwrapped
+	// first and the database inside is treated exactly like a selected .mny file.
+	if IsMicrosoftMoneyBackupFile(data) {
+		database, err := extractMicrosoftMoneyDatabaseFromBackup(ctx, data)
+
+		if err != nil {
+			log.Errorf(ctx, "[microsoft_money_transaction_data_file_importer.ParseImportedData] cannot extract the Microsoft Money database from the backup of user \"uid:%d\", because %s", user.Uid, err.Error())
+			return nil, nil, nil, nil, nil, nil, errs.Or(err, errs.ErrImportMicrosoftMoneyBackupFileNotReadable)
+		}
+
+		data = database
+	}
+
 	if !IsMicrosoftMoneyDataFile(data) {
 		log.Warnf(ctx, "[microsoft_money_transaction_data_file_importer.ParseImportedData] the import file of user \"uid:%d\" has no Microsoft Money database header", user.Uid)
 		return nil, nil, nil, nil, nil, nil, errs.ErrImportFileTypeNotSupported

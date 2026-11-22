@@ -250,7 +250,7 @@ Import transactions from external financial software and bank exports.
 | **Honey Ledger** | CSV, TSV |
 | **Custom** | CSV/TSV/SSV (configurable), Excel (.xlsx, .xls) |
 | **Quicken** | QFX, QIF (Y/M/D, M/D/Y, D/M/Y date formats), IIF, QDF (guided — see below) |
-| **Microsoft Money** | OFX, MNY (.mny read directly — see below) |
+| **Microsoft Money** | OFX, MNY (`.mny` read directly), MBF (`.mbf` backups read directly — see below) |
 | **General Data Exchange** | OFX, QFX, QIF, IIF |
 | **Bank Statements** | Camt.052 (XML), Camt.053 (XML), MT940 (SWIFT) |
 | **Chinese Payment** | Alipay (App/Web CSV), WeChat Pay (Excel/CSV), JD.com Finance |
@@ -274,7 +274,9 @@ Ledger reads that format directly, so a `.mny` file imports without an export
 step — see [MONEY_FILE_FORMAT.md](./MONEY_FILE_FORMAT.md) for the format itself.
 
 Select **Microsoft Money Data File (MNY)**, upload the file and review the parsed
-transactions. The import reads:
+transactions. Money's backups work the same way: choose **Microsoft Money Backup
+File (MBF)** and upload the `.mbf` itself — Honey Ledger unpacks the cabinet in
+memory, so there is nothing to extract first. The import reads:
 
 | In Money | Becomes |
 |----------|---------|

@@ -261,6 +261,11 @@ export const SUPPORTED_IMPORT_FILE_CATEGORY_AND_TYPES: ImportFileCategoryAndType
                 type: 'microsoft_money_mny',
                 name: 'Microsoft Money Data File (MNY)',
                 extensions: '.mny'
+            },
+            {
+                type: 'microsoft_money_mbf',
+                name: 'Microsoft Money Backup File (MBF)',
+                extensions: '.mbf'
             }
         ]
     },

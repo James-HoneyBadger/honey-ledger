@@ -1181,6 +1181,8 @@
         "import file type not supported": "ประเภทไฟล์นำเข้าไม่รองรับ",
         "microsoft money data file cannot be read directly": "Microsoft Money could not read this file. It is either damaged or uses a layout Honey Ledger does not understand. In Money, choose File > Export > QIF (or OFX) and import the exported file instead.",
         "microsoft money data file is password protected": "Microsoft Money protected this file with a password, which scrambles the data it holds. Remove the password in Microsoft Money and import the file again.",
+        "microsoft money backup file cannot be read": "This Microsoft Money backup could not be opened. It is either damaged, not a complete Microsoft Money backup, or does not contain a Microsoft Money database.",
+        "microsoft money backup file is too large": "This Microsoft Money backup expands to a database that is larger than Honey Ledger will import. Check that the file is a Microsoft Money backup.",
         "quicken data file cannot be read directly": "Quicken saves its data in a proprietary data file that cannot be read directly. In Quicken, choose File > Export > QIF (or QFX/OFX) and import the exported file instead.",
         "no data to import": "ไม่มีข้อมูลให้นำเข้า",
         "cannot add transaction before balance modification transaction": "ไม่สามารถเพิ่มธุรกรรมก่อนธุรกรรมปรับยอดเงินได้",

@@ -41,6 +41,14 @@ which affect anyone shipping or embedding Honey Ledger.
   largest expenses, recurring (subscription-like) payments, unusual spending,
   account balances and shared expenses — entirely on the machine, with no model
   and no outbound call.
+- Microsoft Money backups (`.mbf`) import directly. A backup is a Microsoft
+  Cabinet around the same database, so instead of asking the user to run
+  `cabextract`, the importer expands the archive in memory — stored, MSZIP and
+  LZX members are all read — and finds the database by its `MSISAM` header rather
+  than by name, because Money names the member `mbf…tmp`. The expansion is capped
+  at 512 MiB and 32 members so a crafted cabinet cannot exhaust memory, and a
+  damaged backup is reported as such. The import dialog offers
+  **Microsoft Money Backup File (MBF)** next to the data file.
 
 ### Changed
 

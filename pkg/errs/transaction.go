@@ -51,4 +51,6 @@ var (
 	ErrImportMicrosoftMoneyDataFileNotReadable                     = NewNormalError(NormalSubcategoryTransaction, 41, http.StatusBadRequest, "microsoft money data file cannot be read directly")
 	ErrImportQuickenDataFileNotReadable                            = NewNormalError(NormalSubcategoryTransaction, 42, http.StatusBadRequest, "quicken data file cannot be read directly")
 	ErrImportMicrosoftMoneyDataFileEncrypted                       = NewNormalError(NormalSubcategoryTransaction, 43, http.StatusBadRequest, "microsoft money data file is password protected")
+	ErrImportMicrosoftMoneyBackupFileNotReadable                   = NewNormalError(NormalSubcategoryTransaction, 44, http.StatusBadRequest, "microsoft money backup file cannot be read")
+	ErrImportMicrosoftMoneyBackupFileTooLarge                      = NewNormalError(NormalSubcategoryTransaction, 45, http.StatusBadRequest, "microsoft money backup file is too large")
 )

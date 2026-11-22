@@ -28,8 +28,9 @@ configure. Nothing is sent in the background on its own.
 | Update check | GitHub releases | Background check in packaged AppImage and Windows builds | `HONEY_DISABLE_UPDATE_CHECK=1` |
 
 A remote MySQL or PostgreSQL database is contacted whenever you configure one;
-the default SQLite database is a local file. Cloud Settings Sync stores
-preferences in the application database and sends them nowhere else.
+the default SQLite database is a local file. Settings are stored in that
+database only — there is no cloud sync — and the app runs as a single local
+user, signed in automatically over loopback with no account or password.
 
 ### No third-party model access
 

@@ -64,6 +64,15 @@ which affect anyone shipping or embedding Honey Ledger.
 
 ### Removed
 
+- Accounts. The app runs as a single local user and signs it in
+  automatically over loopback: there is no login screen, no signup, no
+  generated `admin` password to hunt for in the terminal, and no password
+  reset. Anything that only made sense with several users (multi-user
+  registration, login, cloud settings sync) is unreachable.
+- Cloud settings sync. Preferences stay in the local database; the three
+  `/api/v1/users/settings/cloud/*` endpoints and the Settings Sync tab are
+  gone.
+
 - The AI receipt recognition feature (`POST
   /api/v1/llm/transactions/recognize_receipt_image.json`) and all large language
   model provider integrations (OpenAI, OpenAI-compatible, Anthropic,

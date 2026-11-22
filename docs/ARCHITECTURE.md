@@ -181,6 +181,9 @@ Applied in order per request:
 | `jdcom` | JD.com Finance |
 | `feidee` | Feidee MyMoney |
 | `sgml` | SGML-based format parsing |
+| `msmoney` | Microsoft Money (`.mny`, `.mbf`) |
+| `msmoney/msisam` | Reader for the Money database engine, see [MONEY_FILE_FORMAT.md](./MONEY_FILE_FORMAT.md) |
+| `quicken` | Quicken (`.qdf`) |
 | `datatable` | Internal tabular data type |
 | `custom` | User-defined column mappings |
 | `converter` | Converter registry and factory |

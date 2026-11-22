@@ -12,6 +12,12 @@ details.
 
 ### Added
 
+- A reader for the Microsoft Money data file format
+  (`pkg/converters/msmoney/msisam`). It decodes the database header, the table
+  definitions, the catalog that names the tables and the values in their rows,
+  and reads a real Money Sunset database end to end: accounts, categories,
+  currencies and 39 000 transactions out of the sample. The format is documented
+  in [docs/MONEY_FILE_FORMAT.md](docs/MONEY_FILE_FORMAT.md).
 - Import dialog entries for Microsoft Money (`.mny`) and Quicken (`.qdf`) data
   files. Both are undocumented databases, so selecting one explains why the file
   cannot be decoded and which QIF/OFX export to use instead, rather than failing

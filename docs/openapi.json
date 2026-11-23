@@ -1329,6 +1329,242 @@
         "summary": "Restore a SQLite snapshot backup"
       }
     },
+    "/api/v1/data/export.csv": {
+      "get": {
+        "operationId": "exportTransactionsCsv",
+        "parameters": [
+          {
+            "description": "1 balance modification, 2 income, 3 expense, 4 transfer; 0 or omitted for every type",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "maximum": 4,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Comma separated category ids or id ranges, including their subcategories",
+            "in": "query",
+            "name": "category_ids",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma separated account ids or id ranges, including their subaccounts",
+            "in": "query",
+            "name": "account_ids",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Tag filter expression, same syntax as the transaction list",
+            "in": "query",
+            "name": "tag_filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Amount filter expression, same syntax as the transaction list",
+            "in": "query",
+            "name": "amount_filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only transactions whose description contains this text",
+            "in": "query",
+            "name": "keyword",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Latest transaction time, Unix timestamp in seconds",
+            "in": "query",
+            "name": "max_time",
+            "required": false,
+            "schema": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Earliest transaction time, Unix timestamp in seconds",
+            "in": "query",
+            "name": "min_time",
+            "required": false,
+            "schema": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "shared or unshared, as in the transaction list",
+            "in": "query",
+            "name": "shared_filter",
+            "required": false,
+            "schema": {
+              "enum": [
+                "shared",
+                "unshared"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The exported file",
+            "headers": {
+              "Content-Disposition": {
+                "description": "Attachment file name, for example admin_2026_11_23_12_30.csv",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Export the filtered transactions as a CSV file"
+      }
+    },
+    "/api/v1/data/export.tsv": {
+      "get": {
+        "operationId": "exportTransactionsTsv",
+        "parameters": [
+          {
+            "description": "1 balance modification, 2 income, 3 expense, 4 transfer; 0 or omitted for every type",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "maximum": 4,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Comma separated category ids or id ranges, including their subcategories",
+            "in": "query",
+            "name": "category_ids",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma separated account ids or id ranges, including their subaccounts",
+            "in": "query",
+            "name": "account_ids",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Tag filter expression, same syntax as the transaction list",
+            "in": "query",
+            "name": "tag_filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Amount filter expression, same syntax as the transaction list",
+            "in": "query",
+            "name": "amount_filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only transactions whose description contains this text",
+            "in": "query",
+            "name": "keyword",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Latest transaction time, Unix timestamp in seconds",
+            "in": "query",
+            "name": "max_time",
+            "required": false,
+            "schema": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Earliest transaction time, Unix timestamp in seconds",
+            "in": "query",
+            "name": "min_time",
+            "required": false,
+            "schema": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "shared or unshared, as in the transaction list",
+            "in": "query",
+            "name": "shared_filter",
+            "required": false,
+            "schema": {
+              "enum": [
+                "shared",
+                "unshared"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/tab-separated-values": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The exported file",
+            "headers": {
+              "Content-Disposition": {
+                "description": "Attachment file name, for example admin_2026_11_23_12_30.tsv",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Export the filtered transactions as a TSV file"
+      }
+    },
     "/api/v1/insights/review/dismiss.json": {
       "post": {
         "operationId": "dismissTransactionReviewFinding",

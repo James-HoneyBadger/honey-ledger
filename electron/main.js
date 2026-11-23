@@ -503,6 +503,9 @@ function sendToRenderer(channel, ...args) {
 // export are reachable without first finding the transaction list page.
 function buildApplicationMenu() {
     const template = [
+        // macOS puts the application menu (About, Hide, Quit) first and expects
+        // it to exist; without it there is no Cmd+Q and the first menu is File.
+        ...(process.platform === 'darwin' ? [{ role: 'appMenu' }] : []),
         {
             label: 'File',
             submenu: [

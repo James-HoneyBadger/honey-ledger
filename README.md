@@ -33,7 +33,7 @@ Honey Ledger removes the step instead of documenting it. In the transaction list
 | **Splits** | one transaction per split, allocated to the right categories |
 | **Backups (`.mbf`)** | Money's backups are Microsoft Cabinet archives around the same database; Honey Ledger unpacks one itself and imports the database inside |
 
-**Verified end to end against a real Money Sunset database: 165 accounts, 195 categories, 155 currencies and 39,293 transaction rows, of which 28,057 become transactions** — the remainder are investment activity and split totals, which have no counterpart in the ledger. Decoded from the binary and imported with no external program, no Windows, and no network involved.
+**Verified end to end against a real Money Sunset database: 165 accounts, 193 categories and 39,293 transaction rows, of which 28,057 become transactions** — the remainder are investment activity and split totals, which have no counterpart in the ledger. Decoded from the binary and imported with no external program, no Windows, and no network involved.
 
 Being straight about the limits, because an import you can trust matters more than one that claims everything: investment activity (share lots and prices) has no counterpart in the target ledger and is skipped; Money 2000 and earlier use an older 2048-byte page layout that is not read yet; and a password-protected file is reported as exactly that rather than failing silently. Quicken's own `.qdf` is likewise proprietary and still out of reach — selecting one explains which QIF/OFX export to use instead of returning a generic "unsupported file type".
 
@@ -57,7 +57,7 @@ If you want the data out of Money without using Honey Ledger, [HB Money Extracto
 
 ## What's new in 2.0
 
-- **Microsoft Money files, read natively — the headline.** Point Honey Ledger at a Money `.mny` file and it decodes the Jet/MSISAM database itself: accounts with their currencies, categories as Money nests them, expense and income transactions, one transfer per pair of accounts, and one transaction per split. Verified against a real Money Sunset database — 165 accounts, 195 categories and 39,293 transaction rows, 28,057 of them importable. No Windows, no copy of Money, no converter, no upload. Money's `.mbf` backups work too — they are Microsoft Cabinet archives around the same database, and Honey Ledger unpacks one itself, so there is nothing to extract by hand. Format reference: [docs/MONEY_FILE_FORMAT.md](docs/MONEY_FILE_FORMAT.md).
+- **Microsoft Money files, read natively — the headline.** Point Honey Ledger at a Money `.mny` file and it decodes the Jet/MSISAM database itself: accounts with their currencies, categories as Money nests them, expense and income transactions, one transfer per pair of accounts, and one transaction per split. Verified against a real Money Sunset database — 165 accounts, 193 categories and 39,293 transaction rows, 28,057 of them importable. No Windows, no copy of Money, no converter, no upload. Money's `.mbf` backups work too — they are Microsoft Cabinet archives around the same database, and Honey Ledger unpacks one itself, so there is nothing to extract by hand. Format reference: [docs/MONEY_FILE_FORMAT.md](docs/MONEY_FILE_FORMAT.md).
 - **Local-only analysis** — the AI assistant and LLM receipt recognition are gone. In their place, a deterministic analysis endpoint reports totals, top categories, largest expenses, recurring payments and unusual spending, computed entirely on your machine.
 - **Free software** — Honey Ledger moved from MIT to the GNU GPL v3.0 or later.
 

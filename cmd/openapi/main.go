@@ -200,6 +200,18 @@ func generatedPaths() map[string]any {
 		"/api/v1/analysis.json": map[string]any{
 			"post": jsonOperation("analyseFinances", "Analyse the user's finances with local, rule-based heuristics; nothing leaves the machine", "FinancialAnalysisRequest", "FinancialAnalysisResponse"),
 		},
+		"/api/v1/data/export.csv": map[string]any{
+			"get": withParameters(
+				fileDownloadOperation("exportTransactionsCsv", "Export the filtered transactions as a CSV file", "text/csv", "admin_2026_11_23_12_30.csv"),
+				exportQueryParameters()...,
+			),
+		},
+		"/api/v1/data/export.tsv": map[string]any{
+			"get": withParameters(
+				fileDownloadOperation("exportTransactionsTsv", "Export the filtered transactions as a TSV file", "text/tab-separated-values", "admin_2026_11_23_12_30.tsv"),
+				exportQueryParameters()...,
+			),
+		},
 		"/api/v1/transactions/splits/index.json": map[string]any{
 			"get": withParameters(
 				responseOperation("getTransactionSplitIndex", "List the split state of the transactions in a time range", arraySchema("TransactionSplitIndexItem")),
@@ -303,6 +315,57 @@ func responseOperation(operationID string, summary string, responseSchema any) m
 				"content": map[string]any{
 					"application/json": map[string]any{
 						"schema": responseSchema,
+					},
+				},
+			},
+		},
+	}
+}
+
+// exportQueryParameters returns the filter the export endpoints share with the
+// transaction list. Every one is optional; omitting them exports everything.
+func exportQueryParameters() []map[string]any {
+	return []map[string]any{
+		optionalQueryParameterWithSchema("type", "1 balance modification, 2 income, 3 expense, 4 transfer; 0 or omitted for every type", map[string]any{"type": "integer", "minimum": 0, "maximum": 4}),
+		optionalQueryParameter("category_ids", "Comma separated category ids or id ranges, including their subcategories"),
+		optionalQueryParameter("account_ids", "Comma separated account ids or id ranges, including their subaccounts"),
+		optionalQueryParameter("tag_filter", "Tag filter expression, same syntax as the transaction list"),
+		optionalQueryParameter("amount_filter", "Amount filter expression, same syntax as the transaction list"),
+		optionalQueryParameter("keyword", "Only transactions whose description contains this text"),
+		optionalQueryParameterWithSchema("max_time", "Latest transaction time, Unix timestamp in seconds", map[string]any{"type": "integer", "minimum": 0}),
+		optionalQueryParameterWithSchema("min_time", "Earliest transaction time, Unix timestamp in seconds", map[string]any{"type": "integer", "minimum": 0}),
+		optionalQueryParameterWithSchema("shared_filter", "shared or unshared, as in the transaction list", map[string]any{"type": "string", "enum": []string{"shared", "unshared"}}),
+	}
+}
+
+func optionalQueryParameterWithSchema(name string, description string, schema map[string]any) map[string]any {
+	return map[string]any{
+		"name":        name,
+		"in":          "query",
+		"required":    false,
+		"description": description,
+		"schema":      schema,
+	}
+}
+
+// fileDownloadOperation describes an endpoint that answers with a file rather
+// than JSON, naming the attachment it suggests.
+func fileDownloadOperation(operationID string, summary string, mediaType string, fileNameExample string) map[string]any {
+	return map[string]any{
+		"operationId": operationID,
+		"summary":     summary,
+		"responses": map[string]any{
+			"200": map[string]any{
+				"description": "The exported file",
+				"headers": map[string]any{
+					"Content-Disposition": map[string]any{
+						"description": "Attachment file name, for example " + fileNameExample,
+						"schema":      map[string]any{"type": "string"},
+					},
+				},
+				"content": map[string]any{
+					mediaType: map[string]any{
+						"schema": map[string]any{"type": "string", "format": "binary"},
 					},
 				},
 			},

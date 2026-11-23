@@ -4,7 +4,7 @@ Complete REST API documentation for Honey Ledger.
 
 Most API endpoints return JSON. Export and download endpoints return CSV, TSV, or ZIP files instead. Authenticated endpoints require a `Bearer` token in the `Authorization` header or a valid session cookie.
 
-The machine-readable OpenAPI document is generated at [`openapi.json`](./openapi.json). Frontend request/response types are generated into [`src/models/generated/api.ts`](../src/models/generated/api.ts). Regenerate both with `npm run openapi:generate`; CI verifies them with `npm run openapi:check`. The generated document currently covers the authentication, backup, and token endpoints (plus shared statistics models); this page remains the full endpoint reference.
+The machine-readable OpenAPI document is generated at [`openapi.json`](./openapi.json). Frontend request/response types are generated into [`src/models/generated/api.ts`](../src/models/generated/api.ts). Regenerate both with `npm run openapi:generate`; CI verifies them with `npm run openapi:check`. The generated document currently covers the authentication, backup, token, shared-expense, financial-analysis and transaction-export endpoints; this page remains the full endpoint reference.
 
 ---
 

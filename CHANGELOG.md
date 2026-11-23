@@ -74,9 +74,9 @@ which affect anyone shipping or embedding Honey Ledger.
 - A reader for the Microsoft Money data file format
   (`pkg/converters/msmoney/msisam`). It decodes the database header, the table
   definitions, the catalog that names the tables and the values in their rows,
-  and reads a real Money Sunset database end to end: 165 accounts, 195
-  categories, 155 currencies and 39 293 transaction rows, of which 28 057 become
-  transactions (investment activity and split totals are skipped). The format is documented in
+  and reads a real Money Sunset database end to end: 165 accounts, 193
+  categories and 39 293 transaction rows, of which 28 057 become transactions
+  (investment activity and split totals are skipped). The format is documented in
   [docs/MONEY_FILE_FORMAT.md](docs/MONEY_FILE_FORMAT.md).
 - Import dialog entries for Microsoft Money (`.mny`) and Quicken (`.qdf`) data
   files. Quicken files cannot be decoded, so selecting one explains which

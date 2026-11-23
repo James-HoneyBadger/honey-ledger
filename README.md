@@ -39,7 +39,7 @@ Being straight about the limits, because an import you can trust matters more th
 
 The entire format — the header, the scrambled block that hides the database key, page types, table definitions and the row layout — is written down in [docs/MONEY_FILE_FORMAT.md](docs/MONEY_FILE_FORMAT.md), because a format this close to extinction deserves a record that outlives the software that made it.
 
-If you want the data out of Money without using Honey Ledger, [HB Money Extractor](docs/HB_MONEY_EXTRACTOR.md) is a small standalone program built from this repository that reads the same files and writes CSV, Excel, JSON or QIF.
+If you want the data out of Money without using Honey Ledger, [HB Money Extractor](docs/HB_MONEY_EXTRACTOR.md) is a small standalone program, attached to each release, that reads the same files and writes CSV, Excel, JSON or QIF.
 
 ## What it does best
 

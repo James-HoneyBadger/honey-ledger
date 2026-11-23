@@ -84,7 +84,12 @@ go build -o hb-money-extractor ./cmd/hb-money-extractor
 scripts/build-money-extractor.sh   # Linux, Windows and macOS builds in dist-extractor/
 ```
 
-The repository does not publish ready-made binaries for this program yet, so build
-it with one of the commands above. `scripts/build-money-extractor.sh` cross-compiles
-for Linux (x86-64, arm64), Windows (x86-64) and macOS (Intel, Apple silicon) with
-CGO disabled, so the result is a single file with no dependencies to install.
+Each Honey Ledger release attaches the program for Linux (x86-64, arm64), Windows
+(x86-64) and macOS (Intel, Apple silicon), named
+`hb-money-extractor-<os>-<arch>` (`hb-money-extractor-windows-amd64.exe` on
+Windows). Download the one for your machine, and run it: there is nothing to
+install.
+
+`scripts/build-money-extractor.sh` produces the same five files in
+`dist-extractor/` with CGO disabled, so the result is a single file with no
+dependencies.

@@ -158,3 +158,14 @@ func TestRunRejectsInvalidInput(t *testing.T) {
 	assert.Equal(t, 1, run([]string{"-f", "csv", notMoney}, strings.NewReader(""), &stdout, &stderr))
 	assert.Contains(t, stderr.String(), "not a Microsoft Money data file")
 }
+
+func TestVersionFlagReportsTheBuildVersion(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	original := version
+	version = "2.1.0"
+
+	defer func() { version = original }()
+
+	assert.Equal(t, 0, run([]string{"-version"}, strings.NewReader(""), &stdout, &stderr))
+	assert.Equal(t, "HB Money Extractor 2.1.0\n", stdout.String())
+}

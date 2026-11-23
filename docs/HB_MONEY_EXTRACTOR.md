@@ -30,7 +30,7 @@ hb-money-extractor -f csv,xlsx -o ./exported "2026_11_21_Backup.mbf"
 | `-f`   | Formats, comma separated, or `all` |
 | `-o`   | Output folder, created if it does not exist (default: next to the input file) |
 | `-list` | List the formats and their keys |
-| `-version` | Print the version |
+| `-version` | Print the version; a downloaded binary reports the release it came from |
 | `-h`   | Print the usage summary |
 
 Existing files are never overwritten; a number is added to the new file's name
@@ -92,4 +92,5 @@ install.
 
 `scripts/build-money-extractor.sh` produces the same five files in
 `dist-extractor/` with CGO disabled, so the result is a single file with no
-dependencies.
+dependencies. It stamps the version from `package.json`, so those builds report
+the same number as the release; a plain `go build` reports `dev`.

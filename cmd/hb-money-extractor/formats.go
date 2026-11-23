@@ -288,7 +288,7 @@ func writeJSON(w io.Writer, data *msmoney.ExtractedData) error {
 		Transactions []jsonTransaction `json:"transactions"`
 		Skipped      int               `json:"skippedRows"`
 	}{
-		Source:       appName + " " + appVersion,
+		Source:       appName + " " + version,
 		Accounts:     make([]jsonAccount, 0, len(data.Accounts)),
 		Transactions: make([]jsonTransaction, 0, len(data.Transactions)),
 		Skipped:      data.Skipped,

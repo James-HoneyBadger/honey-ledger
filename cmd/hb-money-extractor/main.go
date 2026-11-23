@@ -22,10 +22,12 @@ import (
 	"github.com/James-HoneyBadger/honey-ledger/pkg/log"
 )
 
-const (
-	appName    = "HB Money Extractor"
-	appVersion = "1.0.0"
-)
+const appName = "HB Money Extractor"
+
+// version is set at build time from package.json by
+// scripts/build-money-extractor.sh, so a downloaded binary and the release it
+// came from report the same number. A plain "go build" leaves it as dev.
+var version = "dev"
 
 func main() {
 	log.SetQuiet()
@@ -42,7 +44,7 @@ func run(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) int
 	showVersion := flags.Bool("version", false, "print the version and exit")
 
 	flags.Usage = func() {
-		fmt.Fprintf(stderr, "%s %s\n\n", appName, appVersion)
+		fmt.Fprintf(stderr, "%s %s\n\n", appName, version)
 		fmt.Fprintf(stderr, "Extracts a Microsoft Money data file (.mny) or backup (.mbf).\n\n")
 		fmt.Fprintf(stderr, "Usage:\n  hb-money-extractor [options] [file.mny|file.mbf]\n\n")
 		fmt.Fprintf(stderr, "Run without a file (or without -f) to be asked what to extract.\n\nOptions:\n")
@@ -58,7 +60,7 @@ func run(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) int
 	}
 
 	if *showVersion {
-		fmt.Fprintf(stdout, "%s %s\n", appName, appVersion)
+		fmt.Fprintf(stdout, "%s %s\n", appName, version)
 		return 0
 	}
 
@@ -86,7 +88,7 @@ func run(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) int
 	}
 
 	if interactive {
-		fmt.Fprintf(stdout, "%s %s\n\n", appName, appVersion)
+		fmt.Fprintf(stdout, "%s %s\n\n", appName, version)
 	}
 
 	if inputPath == "" {

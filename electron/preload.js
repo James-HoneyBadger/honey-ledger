@@ -27,5 +27,10 @@ contextBridge.exposeInMainWorld('honeyLedger', {
 
     onExportTransactions: (callback) => {
         ipcRenderer.on('export-transactions', (_event, fileType) => callback(fileType));
+    },
+
+    // Save an exported file through the native save dialog.
+    saveFile: (fileName, data) => {
+        return ipcRenderer.invoke('save-file', { fileName, data });
     }
 });

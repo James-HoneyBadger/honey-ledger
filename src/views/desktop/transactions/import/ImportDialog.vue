@@ -566,9 +566,8 @@ const exportFileGuideDocumentUrl = computed<string | undefined>(() => {
         return undefined;
     }
 
-    const language = document.language ? document.language + '/' : '';
-    const anchor = document.anchor ? '#' + document.anchor : '';
-    return `https://github.com/James-HoneyBadger/honey-ledger/${language}export_and_import${anchor}`;
+    const anchor = isCustomFileFormat.value ? 'custom-import-scripts' : 'supported-formats';
+    return `https://github.com/James-HoneyBadger/honey-ledger/blob/main/docs/USER_GUIDE.md#${anchor}`;
 });
 
 const exportFileGuideDocumentLanguageName = computed<string | undefined>(() => allSupportedImportFileTypesMap.value[fileType.value]?.document?.displayLanguageName);

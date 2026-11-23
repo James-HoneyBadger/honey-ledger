@@ -701,6 +701,27 @@ app.whenReady().then(async () => {
             showNotification(title, body);
         });
 
+        // Exports go through the native save dialog so the user chooses where
+        // the file lands; a blob download would drop it in the downloads
+        // folder without saying so.
+        ipcMain.handle('save-file', async (event, { fileName, data }) => {
+            const defaultPath = path.join(app.getPath('downloads'), path.basename(String(fileName || 'export')));
+
+            try {
+                const result = await dialog.showSaveDialog(mainWindow, { title: 'Save file', defaultPath });
+
+                if (result.canceled || !result.filePath) {
+                    return false;
+                }
+
+                await fsPromises.writeFile(result.filePath, Buffer.from(data));
+                return true;
+            } catch (err) {
+                console.error('[Honey Ledger] Failed to save file:', err);
+                return false;
+            }
+        });
+
         createMainWindow();
         buildApplicationMenu();
     } catch (err) {

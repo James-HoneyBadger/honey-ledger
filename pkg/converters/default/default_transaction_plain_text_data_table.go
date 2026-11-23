@@ -4,8 +4,10 @@
 package _default
 
 import (
+	"encoding/csv"
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/datatable"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/errs"
@@ -15,7 +17,7 @@ import (
 type defaultPlainTextDataTable struct {
 	columnSeparator       string
 	lineSeparator         string
-	allLines              []string
+	allRows               [][]string
 	headerLineColumnNames []string
 }
 
@@ -36,17 +38,16 @@ type defaultTransactionPlainTextDataTableBuilder struct {
 	lineSeparator         string
 	columns               []datatable.TransactionDataTableColumn
 	dataColumnNameMapping map[datatable.TransactionDataTableColumn]string
-	dataLineFormat        string
 	builder               *strings.Builder
 }
 
 // DataRowCount returns the total count of data row
 func (t *defaultPlainTextDataTable) DataRowCount() int {
-	if len(t.allLines) < 1 {
+	if len(t.allRows) < 1 {
 		return 0
 	}
 
-	return len(t.allLines) - 1
+	return len(t.allRows) - 1
 }
 
 // HeaderColumnNames returns the header column name list
@@ -78,7 +79,7 @@ func (r *defaultPlainTextDataRow) GetData(columnIndex int) string {
 
 // HasNext returns whether the iterator does not reach the end
 func (t *defaultPlainTextDataRowIterator) HasNext() bool {
-	return t.currentIndex+1 < len(t.dataTable.allLines)
+	return t.currentIndex+1 < len(t.dataTable.allRows)
 }
 
 // CurrentRowId returns current index
@@ -88,40 +89,44 @@ func (t *defaultPlainTextDataRowIterator) CurrentRowId() string {
 
 // Next returns the next basic data row
 func (t *defaultPlainTextDataRowIterator) Next() datatable.BasicDataTableRow {
-	if t.currentIndex+1 >= len(t.dataTable.allLines) {
+	if t.currentIndex+1 >= len(t.dataTable.allRows) {
 		return nil
 	}
 
 	t.currentIndex++
 
-	rowContent := t.dataTable.allLines[t.currentIndex]
-	rowItems := strings.Split(rowContent, t.dataTable.columnSeparator)
-
 	return &defaultPlainTextDataRow{
-		allItems: rowItems,
+		allItems: t.dataTable.allRows[t.currentIndex],
 	}
 }
 
 // AppendTransaction appends the specified transaction to data builder
 func (b *defaultTransactionPlainTextDataTableBuilder) AppendTransaction(data map[datatable.TransactionDataTableColumn]string) {
-	dataRowParams := make([]any, len(b.columns))
-
 	for i := 0; i < len(b.columns); i++ {
-		dataRowParams[i] = data[b.columns[i]]
+		if i > 0 {
+			b.builder.WriteString(b.columnSeparator)
+		}
+
+		b.builder.WriteString(escapePlainTextValue(data[b.columns[i]], b.columnSeparator))
 	}
 
-	b.builder.WriteString(fmt.Sprintf(b.dataLineFormat, dataRowParams...))
+	b.builder.WriteString(b.lineSeparator)
 }
 
-// ReplaceDelimiters returns the text after removing the delimiters
+// ReplaceDelimiters returns the text unchanged: AppendTransaction quotes any
+// field that contains a separator, a quote or a line break, so the text
+// survives a round trip instead of being silently altered.
 func (b *defaultTransactionPlainTextDataTableBuilder) ReplaceDelimiters(text string) string {
-	text = strings.Replace(text, "\r\n", " ", -1)
-	text = strings.Replace(text, "\r", " ", -1)
-	text = strings.Replace(text, "\n", " ", -1)
-	text = strings.Replace(text, b.columnSeparator, " ", -1)
-	text = strings.Replace(text, b.lineSeparator, " ", -1)
-
 	return text
+}
+
+// escapePlainTextValue quotes a field following RFC 4180.
+func escapePlainTextValue(value string, columnSeparator string) string {
+	if strings.Contains(value, columnSeparator) || strings.ContainsAny(value, "\"\r\n") {
+		return `"` + strings.ReplaceAll(value, `"`, `""`) + `"`
+	}
+
+	return value
 }
 
 // String returns the textual representation of this data
@@ -140,23 +145,7 @@ func (b *defaultTransactionPlainTextDataTableBuilder) generateHeaderLine() strin
 		dataColumn := b.columns[i]
 		columnName := b.dataColumnNameMapping[dataColumn]
 
-		ret.WriteString(columnName)
-	}
-
-	ret.WriteString(b.lineSeparator)
-
-	return ret.String()
-}
-
-func (b *defaultTransactionPlainTextDataTableBuilder) generateDataLineFormat() string {
-	var ret strings.Builder
-
-	for i := 0; i < len(b.columns); i++ {
-		if ret.Len() > 0 {
-			ret.WriteString(b.columnSeparator)
-		}
-
-		ret.WriteString("%s")
+		ret.WriteString(escapePlainTextValue(columnName, b.columnSeparator))
 	}
 
 	ret.WriteString(b.lineSeparator)
@@ -165,21 +154,34 @@ func (b *defaultTransactionPlainTextDataTableBuilder) generateDataLineFormat() s
 }
 
 func createNewDefaultPlainTextDataTable(content string, columnSeparator string, lineSeparator string) (*defaultPlainTextDataTable, error) {
-	allLines := strings.Split(content, lineSeparator)
+	separator, size := utf8.DecodeRuneInString(columnSeparator)
 
-	if len(allLines) < 2 {
+	if size < 1 || separator == utf8.RuneError {
 		return nil, errs.ErrNotFoundTransactionDataInFile
 	}
 
-	headerLine := allLines[0]
-	headerLine = strings.ReplaceAll(headerLine, "\r", "")
-	headerLineItems := strings.Split(headerLine, columnSeparator)
+	csvReader := csv.NewReader(strings.NewReader(content))
+	csvReader.Comma = separator
+	csvReader.FieldsPerRecord = -1
+	// Files written by older versions did not quote fields, so a stray quote
+	// must not make the whole file unreadable.
+	csvReader.LazyQuotes = true
+
+	allRows, err := csvReader.ReadAll()
+
+	if err != nil || len(allRows) < 2 {
+		return nil, errs.ErrNotFoundTransactionDataInFile
+	}
+
+	// A byte order mark left by an external editor would otherwise become part
+	// of the first column name.
+	allRows[0][0] = strings.TrimPrefix(allRows[0][0], "\ufeff")
 
 	return &defaultPlainTextDataTable{
 		columnSeparator:       columnSeparator,
 		lineSeparator:         lineSeparator,
-		allLines:              allLines,
-		headerLineColumnNames: headerLineItems,
+		allRows:               allRows,
+		headerLineColumnNames: allRows[0],
 	}, nil
 }
 
@@ -195,11 +197,7 @@ func createNewDefaultTransactionPlainTextDataTableBuilder(transactionCount int, 
 		builder:               &builder,
 	}
 
-	headerLine := dataTableBuilder.generateHeaderLine()
-	dataLineFormat := dataTableBuilder.generateDataLineFormat()
-
-	dataTableBuilder.builder.WriteString(headerLine)
-	dataTableBuilder.dataLineFormat = dataLineFormat
+	dataTableBuilder.builder.WriteString(dataTableBuilder.generateHeaderLine())
 
 	return dataTableBuilder
 }

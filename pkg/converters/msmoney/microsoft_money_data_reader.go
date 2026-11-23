@@ -5,6 +5,7 @@ package msmoney
 
 import (
 	"errors"
+	"sort"
 	"strings"
 	"time"
 
@@ -78,6 +79,9 @@ type microsoftMoneyTransactionRow struct {
 // microsoftMoneyData is the content of a Microsoft Money data file that the
 // importer can use.
 type microsoftMoneyData struct {
+	// Accounts holds every account of the file, including those without
+	// transactions.
+	Accounts     []*microsoftMoneyAccount
 	Transactions []*microsoftMoneyTransaction
 	// Skipped counts the rows the file holds that cannot become a transaction,
 	// such as investment activity, which has no counterpart in the ledger.
@@ -132,7 +136,15 @@ func readMicrosoftMoneyData(ctx core.Context, data []byte) (*microsoftMoneyData,
 
 	transactions, skipped := flattenMicrosoftMoneyTransactions(rows, parents, accounts, categories)
 
-	return &microsoftMoneyData{Transactions: transactions, Skipped: skipped}, nil
+	allAccounts := make([]*microsoftMoneyAccount, 0, len(accounts))
+
+	for _, account := range accounts {
+		allAccounts = append(allAccounts, account)
+	}
+
+	sort.Slice(allAccounts, func(i, j int) bool { return allAccounts[i].Name < allAccounts[j].Name })
+
+	return &microsoftMoneyData{Accounts: allAccounts, Transactions: transactions, Skipped: skipped}, nil
 }
 
 // openMicrosoftMoneyTable returns the named table of the data file, reporting a

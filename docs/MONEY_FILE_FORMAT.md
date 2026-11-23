@@ -68,6 +68,9 @@ A backup is compressed, but a large ledger can still exceed the default 64 MiB
 upload limit (`[data] max_import_file_size`); raise that setting for a `.mbf` that
 is refused for size rather than for content.
 
+To convert a Money file without Honey Ledger, use the standalone
+[HB Money Extractor](HB_MONEY_EXTRACTOR.md).
+
 ## Header page
 
 Page 0 is 4096 bytes and starts with:

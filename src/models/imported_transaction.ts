@@ -71,10 +71,28 @@ export class ImportTransaction implements ImportTransactionResponse {
             hideAmount: false,
             tagIds: this.tagIds,
             pictureIds: [],
-            comment: this.comment,
+            comment: ImportTransaction.truncateComment(this.comment),
             geoLocation: this.geoLocation,
             clientSessionId: ''
         };
+    }
+
+    // A transaction comment is limited to 255 characters. Imported files can
+    // carry a longer note, and the server rejects the whole batch when one item
+    // exceeds the limit, so the note is cut here (counting characters, not
+    // UTF-16 code units) instead of losing the entire import.
+    private static truncateComment(comment: string): string {
+        if (!comment || comment.length <= 255) {
+            return comment || '';
+        }
+
+        const characters = Array.from(comment);
+
+        if (characters.length <= 255) {
+            return comment;
+        }
+
+        return characters.slice(0, 255).join('');
     }
 
     public isTransactionValid(): boolean {

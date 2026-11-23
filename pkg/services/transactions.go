@@ -88,7 +88,7 @@ func (s *TransactionService) GetAllTransactionsByMaxTime(c core.Context, uid int
 }
 
 // GetAllSpecifiedTransactions returns all transactions that match given conditions
-func (s *TransactionService) GetAllSpecifiedTransactions(c core.Context, uid int64, maxTransactionTime int64, minTransactionTime int64, transactionType models.TransactionType, categoryIds []int64, accountIds []int64, tagFilters []*models.TransactionTagFilter, noTags bool, amountFilter string, keyword string, pageCount int32, noDuplicated bool) ([]*models.Transaction, error) {
+func (s *TransactionService) GetAllSpecifiedTransactions(c core.Context, uid int64, maxTransactionTime int64, minTransactionTime int64, transactionType models.TransactionType, categoryIds []int64, accountIds []int64, tagFilters []*models.TransactionTagFilter, noTags bool, amountFilter string, keyword string, sharedFilter string, pageCount int32, noDuplicated bool) ([]*models.Transaction, error) {
 	if maxTransactionTime <= 0 {
 		maxTransactionTime = utils.GetMaxTransactionTimeFromUnixTime(time.Now().Unix())
 	}
@@ -96,7 +96,7 @@ func (s *TransactionService) GetAllSpecifiedTransactions(c core.Context, uid int
 	var allTransactions []*models.Transaction
 
 	for maxTransactionTime > 0 {
-		transactions, err := s.GetTransactionsByMaxTime(c, uid, maxTransactionTime, minTransactionTime, transactionType, categoryIds, accountIds, tagFilters, noTags, amountFilter, keyword, 1, pageCount, false, noDuplicated, "")
+		transactions, err := s.GetTransactionsByMaxTime(c, uid, maxTransactionTime, minTransactionTime, transactionType, categoryIds, accountIds, tagFilters, noTags, amountFilter, keyword, 1, pageCount, false, noDuplicated, sharedFilter)
 
 		if err != nil {
 			return nil, err
@@ -1760,7 +1760,7 @@ func (s *TransactionService) DeleteAllTransactionsOfAccount(c core.Context, uid 
 		return errs.ErrAccountIdInvalid
 	}
 
-	transactions, err := s.GetAllSpecifiedTransactions(c, uid, 0, 0, 0, nil, []int64{accountId}, nil, false, "", "", pageCount, true)
+	transactions, err := s.GetAllSpecifiedTransactions(c, uid, 0, 0, 0, nil, []int64{accountId}, nil, false, "", "", "", pageCount, true)
 
 	if err != nil {
 		return err

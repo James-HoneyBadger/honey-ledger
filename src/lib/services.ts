@@ -485,9 +485,10 @@ export default {
             const tagFilter = encodeURIComponent(req.tagFilter);
             const amountFilter = encodeURIComponent(req.amountFilter);
             const keyword = encodeURIComponent(req.keyword);
-            params = `max_time=${req.maxTime}&min_time=${req.minTime}&type=${req.type}&category_ids=${req.categoryIds}&account_ids=${req.accountIds}&tag_filter=${tagFilter}&amount_filter=${amountFilter}&keyword=${keyword}`;
+            const sharedFilter = encodeURIComponent(req.sharedFilter || '');
+            params = `max_time=${req.maxTime}&min_time=${req.minTime}&type=${req.type}&category_ids=${req.categoryIds}&account_ids=${req.accountIds}&tag_filter=${tagFilter}&amount_filter=${amountFilter}&keyword=${keyword}&shared_filter=${sharedFilter}`;
         } else {
-            params = 'max_time=0&min_time=0&type=0&category_ids=&account_ids=&tag_filter=&amount_filter=&keyword=';
+            params = 'max_time=0&min_time=0&type=0&category_ids=&account_ids=&tag_filter=&amount_filter=&keyword=&shared_filter=';
         }
 
         if (fileType === 'csv') {

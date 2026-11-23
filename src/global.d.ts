@@ -26,6 +26,8 @@ interface Window {
         apiBaseUrl?: string;
         showNotification?: (title: string, body: string) => void;
         onQuickAddTransaction?: (callback: () => void) => void;
+        onImportTransactions?: (callback: () => void) => void;
+        onExportTransactions?: (callback: (fileType: string) => void) => void;
     };
 }
 

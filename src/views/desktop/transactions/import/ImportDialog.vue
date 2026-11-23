@@ -161,28 +161,29 @@
                             </v-col>
 
                             <v-col cols="12" md="12" v-if="supportedAdditionalOptions">
-                                <v-select
-                                    :disabled="submitting"
-                                    :label="tt('Additional Options')"
-                                    :placeholder="tt('Additional Options')"
-                                    v-model="fileType"
-                                    v-model:menu="additionalOptionsMenuState"
-                                >
-                                    <template #selection>
-                                        <span class="cursor-pointer">{{ displaySelectedAdditionalOptions }}</span>
+                                <v-menu :close-on-content-click="false" v-model="additionalOptionsMenuState">
+                                    <template #activator="{ props: menuProps }">
+                                        <v-text-field
+                                            readonly
+                                            persistent-placeholder
+                                            class="always-cursor-pointer"
+                                            :disabled="submitting"
+                                            :label="tt('Additional Options')"
+                                            :placeholder="tt('Additional Options')"
+                                            :model-value="displaySelectedAdditionalOptions"
+                                            v-bind="menuProps"
+                                        />
                                     </template>
 
-                                    <template #no-data>
-                                        <v-list class="py-0">
-                                            <template v-for="item in allSupportedAdditionalOptions">
-                                                <v-list-item :key="item.key"
-                                                             :append-icon="importAdditionalOptions[item.key] ? mdiCheck : undefined"
-                                                             @click="importAdditionalOptions[item.key] = !importAdditionalOptions[item.key]"
-                                                             v-if="isDefined(supportedAdditionalOptions[item.key])">{{ tt(item.name) }}</v-list-item>
-                                            </template>
-                                        </v-list>
-                                    </template>
-                                </v-select>
+                                    <v-list>
+                                        <template v-for="item in allSupportedAdditionalOptions">
+                                            <v-list-item :key="item.key"
+                                                         :append-icon="importAdditionalOptions[item.key] ? mdiCheck : undefined"
+                                                         @click="importAdditionalOptions[item.key] = !importAdditionalOptions[item.key]"
+                                                         v-if="isDefined(supportedAdditionalOptions[item.key])">{{ tt(item.name) }}</v-list-item>
+                                        </template>
+                                    </v-list>
+                                </v-menu>
                             </v-col>
 
                             <v-col cols="12" md="12" v-if="!isImportDataFromTextbox">
@@ -894,6 +895,7 @@ function parseData(): void {
             if (response.items) {
                 for (const [importTransaction, index] of itemAndIndex(response.items)) {
                     const parsedTransaction = ImportTransaction.of(importTransaction, index);
+                    parsedTransaction.selected = true;
                     parsedTransactions.push(parsedTransaction);
                 }
             }
@@ -919,32 +921,56 @@ function parseData(): void {
     }
 }
 
-function submit(): void {
+async function submit(): Promise<void> {
     if (importTransactionCheckDataTab.value?.isEditing) {
         return;
     }
 
+    submitting.value = true;
+
+    try {
+        await importTransactionCheckDataTab.value?.createMissingItems();
+    } catch (error) {
+        submitting.value = false;
+
+        if (!(error as { processed?: boolean }).processed) {
+            snackbar.value?.showError(error as { message: string });
+        }
+
+        return;
+    }
+
     const transactions: ImportTransaction[] = [];
+    let invalidCount = 0;
 
     if (importTransactions.value) {
         for (const importTransaction of importTransactions.value) {
-            if (importTransaction.valid && importTransaction.selected) {
+            if (!importTransaction.selected) {
+                continue;
+            }
+
+            if (importTransaction.valid) {
                 transactions.push(importTransaction);
-            } else if (!importTransaction.valid && importTransaction.selected) {
-                snackbar.value?.showError('Cannot import invalid transactions');
-                return;
+            } else {
+                invalidCount++;
             }
         }
     }
 
     if (transactions.length < 1) {
+        submitting.value = false;
         snackbar.value?.showError('No data to import');
         return;
     }
 
-    confirmDialog.value?.open('format.misc.confirmImportTransactions', {
-        count: getDisplayCount(transactions.length)
-    }).then(() => {
+    submitting.value = false;
+
+    const confirmMessage = invalidCount > 0 ? 'format.misc.confirmImportInvalidTransactions' : 'format.misc.confirmImportTransactions';
+    const confirmParams = invalidCount > 0
+        ? { count: getDisplayCount(transactions.length), invalidCount: getDisplayCount(invalidCount) }
+        : { count: getDisplayCount(transactions.length) };
+
+    confirmDialog.value?.open(confirmMessage, confirmParams).then(() => {
         submitting.value = true;
 
         if (transactions.length > 100) {

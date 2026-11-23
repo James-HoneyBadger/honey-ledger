@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-const { app, BrowserWindow, protocol, shell, net: electronNet, session, Tray, Menu, globalShortcut, Notification, nativeImage, ipcMain } = require('electron');
+const { app, BrowserWindow, dialog, protocol, shell, net: electronNet, session, Tray, Menu, globalShortcut, Notification, nativeImage, ipcMain } = require('electron');
 const path = require('path');
 
 const { adoptLegacyConfigFile, migrateLegacyUserDataDir } = require('./userDataLayout.js');
@@ -489,6 +489,48 @@ function setupAutoUpdate() {
     return autoUpdater;
 }
 
+function sendToRenderer(channel, ...args) {
+    if (!mainWindow) {
+        return;
+    }
+
+    mainWindow.show();
+    mainWindow.focus();
+    mainWindow.webContents.send(channel, ...args);
+}
+
+// The native File menu mirrors the in-app Data Transfer entries so import and
+// export are reachable without first finding the transaction list page.
+function buildApplicationMenu() {
+    const template = [
+        {
+            label: 'File',
+            submenu: [
+                {
+                    label: 'Import Transactions…',
+                    accelerator: 'CmdOrCtrl+O',
+                    click: () => sendToRenderer('import-transactions')
+                },
+                {
+                    label: 'Export Transactions to CSV…',
+                    click: () => sendToRenderer('export-transactions', 'csv')
+                },
+                {
+                    label: 'Export Transactions to TSV…',
+                    click: () => sendToRenderer('export-transactions', 'tsv')
+                },
+                { type: 'separator' },
+                process.platform === 'darwin' ? { role: 'close' } : { role: 'quit' }
+            ]
+        },
+        { role: 'editMenu' },
+        { role: 'viewMenu' },
+        { role: 'windowMenu' }
+    ];
+
+    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
 function createMainWindow() {
     // Enforce Content Security Policy
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
@@ -660,6 +702,7 @@ app.whenReady().then(async () => {
         });
 
         createMainWindow();
+        buildApplicationMenu();
     } catch (err) {
         console.error('[Honey Ledger] Backend failed to start:', err);
         app.quit();

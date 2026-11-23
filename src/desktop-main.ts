@@ -591,4 +591,27 @@ app.component('AccountAndCategorySankeyChart', AccountAndCategorySankeyChart);
 
 app.directive('TextFieldAutoWidth', TextFieldAutoWidth);
 
-app.mount('#app');
+// A Honey Ledger installation owns exactly one user, so the session is created
+// once at startup instead of asking for credentials. Doing it here — rather
+// than in a router guard, which runs on every navigation — keeps it to a single
+// request and cannot loop.
+async function signInLocalUser(): Promise<void> {
+    const { isDesktopAutoLoginEnabled } = await import('@/lib/server_settings.ts');
+
+    if (!isDesktopAutoLoginEnabled()) {
+        return;
+    }
+
+    const { useRootStore } = await import('@/stores/index.ts');
+
+    try {
+        await useRootStore(pinia).autoLogin();
+    } catch {
+        // The single user is missing or disabled; the router falls back to the
+        // recovery screen.
+    }
+}
+
+signInLocalUser().finally(() => {
+    app.mount('#app');
+});

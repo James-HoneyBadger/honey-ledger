@@ -196,7 +196,7 @@ const (
 	defaultTransactionPictureFileMaxSize uint32 = 10485760 // 10MB
 	defaultUserAvatarFileMaxSize         uint32 = 1048576  // 1MB
 
-	defaultImportFileMaxSize uint32 = 10485760 // 10MB
+	defaultImportFileMaxSize uint32 = 67108864 // 64MB, large enough for a full Microsoft Money data file
 
 	defaultExchangeRatesDataRequestTimeout uint32 = 10000 // 10 seconds
 )

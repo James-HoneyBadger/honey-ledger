@@ -36,4 +36,7 @@ type ExportTransactionDataRequest struct {
 	Keyword      string          `form:"keyword"`
 	MaxTime      int64           `form:"max_time" binding:"min=0"` // Unix timestamp in seconds
 	MinTime      int64           `form:"min_time" binding:"min=0"` // Unix timestamp in seconds
+	// SharedFilter limits the exported rows the same way the transaction list
+	// does, so the file matches what the user is currently looking at.
+	SharedFilter string `form:"shared_filter" binding:"omitempty,oneof=shared unshared"`
 }

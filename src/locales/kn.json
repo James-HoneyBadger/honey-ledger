@@ -137,7 +137,9 @@
             "clearTransactionsInAccountTip": "ಈ ಕ್ರಿಯೆಯನ್ನು ಹಿಂದಕ್ಕೆ ತರಲು ಸಾಧ್ಯವಿಲ್ಲ. ಇದು {account} ನಲ್ಲಿ ನಿಮ್ಮ ಎಲ್ಲಾ ವಹಿವಾಟುಗಳನ್ನು ಅಳಿಸುತ್ತದೆ. ದೃಢೀಕರಿಸಲು ದಯವಿಟ್ಟು ನಿಮ್ಮ ಪ್ರಸ್ತುತ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ.",
             "accountActivationAndResendValidationEmailTip": "ಖಾತೆ ಸಕ್ರಿಯಗೊಳಿಸುವ ಲಿಂಕ್ ಅನ್ನು ನಿಮ್ಮ ಈಮೇಲ್‌ಗೆ ಕಳುಹಿಸಲಾಗಿದೆ: {email}. ನೀವು ಇಮೇಲ್ ಪಡೆಯದಿದ್ದರೆ, ದಯವಿಟ್ಟು ಪಾಸ್‌ವರ್ಡ್ ಮರು ನಮೂದಿಸಿ ಮತ್ತು ಕೆಳಗಿನ ಬಟನ್ ಒತ್ತಿ ಸರೀಕರಿಸುವ ಇಮೇಲ್ ಮರು ಕಳುಹಿಸಿ.",
             "resendValidationEmailTip": "ನೀವು ಇಮೇಲ್ ಪಡೆಯದಿದ್ದರೆ, ದಯವಿಟ್ಟು ಪಾಸ್‌ವರ್ಡ್ ಮರು ನಮೂದಿಸಿ ಮತ್ತು ಕೆಳಗಿನ ಬಟನ್ ಒತ್ತಿ ಮರು ಸರೀಕರಿಸುವ ಇಮೇಲ್ ಕಳುಹಿಸಲಾಗುವುದು: {email}",
-            "oauth2bindTip": "ನೀವು {providerName} ಬಳಸಿ {userName} ಬಳಕೆದಾರರಾಗಿ ಲಾಗಿನ್ ಆಗುತ್ತಿದ್ದೀರಿ. ದೃಢೀಕರಿಸಲು ದಯವಿಟ್ಟು ನಿಮ್ಮ Honey Ledger ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ."
+            "oauth2bindTip": "ನೀವು {providerName} ಬಳಸಿ {userName} ಬಳಕೆದಾರರಾಗಿ ಲಾಗಿನ್ ಆಗುತ್ತಿದ್ದೀರಿ. ದೃಢೀಕರಿಸಲು ದಯವಿಟ್ಟು ನಿಮ್ಮ Honey Ledger ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ.",
+            "createdMissingItems": "Created {count} missing accounts, categories or tags.",
+            "confirmImportInvalidTransactions": "{invalidCount} of the selected transactions cannot be imported and will be skipped. Import the remaining {count} transactions?"
         }
     },
     "dataExport": {
@@ -2650,5 +2652,17 @@
     "Forget Saved Mapping": "ಉಳಿಸಿದ ಮ್ಯಾಪಿಂಗ್ ಮರೆತುಬಿಡಿ",
     "Saved mapping loaded": "ಉಳಿಸಿದ ಮ್ಯಾಪಿಂಗ್ ಲೋಡ್ ಆಗಿದೆ",
     "Saved mapping forgotten": "ಉಳಿಸಿದ ಮ್ಯಾಪಿಂಗ್ ಮರೆತುಹೋಗಿದೆ",
-    "Show shared expense transactions only": "ಹಂಚಿದ ವೆಚ್ಚದ ವಹಿವಾಟುಗಳನ್ನು ಮಾತ್ರ ತೋರಿಸಿ"
+    "Show shared expense transactions only": "ಹಂಚಿದ ವೆಚ್ಚದ ವಹಿವಾಟುಗಳನ್ನು ಮಾತ್ರ ತೋರಿಸಿ",
+    "Data Transfer": "Data Transfer",
+    "Export Transactions": "Export Transactions",
+    "Import Data": "Import Data",
+    "Export the transactions that match the current filter.": "Export the transactions that match the current filter.",
+    "Import transactions from a file exported by another finance application or bank.": "Import transactions from a file exported by another finance application or bank.",
+    "Quicken File Format": "Quicken File Format",
+    "Microsoft Money File Format": "Microsoft Money File Format",
+    "Quicken Data File (QDF)": "Quicken Data File (QDF)",
+    "Microsoft Money Data File (MNY)": "Microsoft Money Data File (MNY)",
+    "Microsoft Money Backup File (MBF)": "Microsoft Money Backup File (MBF)",
+    "Create Missing Items": "Create Missing Items",
+    "Other Income": "Other Income"
 }

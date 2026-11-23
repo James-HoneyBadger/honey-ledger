@@ -617,7 +617,7 @@ func bindCsv(fn core.DataHandlerFunc) gin.HandlerFunc {
 		result, fileName, err := fn(c)
 
 		if err != nil {
-			utils.PrintDataErrorResult(c, "text/text", err)
+			utils.PrintDataErrorResult(c, "text/plain; charset=utf-8", err)
 		} else {
 			utils.PrintDataSuccessResult(c, "text/csv; charset=utf-8", fileName, result)
 		}
@@ -630,7 +630,7 @@ func bindTsv(fn core.DataHandlerFunc) gin.HandlerFunc {
 		result, fileName, err := fn(c)
 
 		if err != nil {
-			utils.PrintDataErrorResult(c, "text/text", err)
+			utils.PrintDataErrorResult(c, "text/plain; charset=utf-8", err)
 		} else {
 			utils.PrintDataSuccessResult(c, "text/tab-separated-values; charset=utf-8", fileName, result)
 		}
@@ -643,7 +643,7 @@ func bindZip(fn core.DataHandlerFunc) gin.HandlerFunc {
 		result, fileName, err := fn(c)
 
 		if err != nil {
-			utils.PrintDataErrorResult(c, "text/text", err)
+			utils.PrintDataErrorResult(c, "text/plain; charset=utf-8", err)
 		} else {
 			utils.PrintDataSuccessResult(c, "application/zip", fileName, result)
 		}
@@ -656,7 +656,7 @@ func bindImage(fn core.ImageHandlerFunc) gin.HandlerFunc {
 		result, contentType, err := fn(c)
 
 		if err != nil {
-			utils.PrintDataErrorResult(c, "text/text", err)
+			utils.PrintDataErrorResult(c, "text/plain; charset=utf-8", err)
 		} else {
 			utils.PrintDataSuccessResult(c, contentType, "", result)
 		}
@@ -669,7 +669,7 @@ func bindProxy(fn core.ProxyHandlerFunc) gin.HandlerFunc {
 		proxy, err := fn(c)
 
 		if err != nil {
-			utils.PrintDataErrorResult(c, "text/text", err)
+			utils.PrintDataErrorResult(c, "text/plain; charset=utf-8", err)
 		} else {
 			proxy.ServeHTTP(c.Writer, c.Request)
 		}

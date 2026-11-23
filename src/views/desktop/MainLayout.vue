@@ -102,6 +102,23 @@
                 </li>
                 <li class="nav-section-title">
                     <div class="title-wrapper">
+                        <span class="title-text">{{ tt('Data Transfer') }}</span>
+                    </div>
+                </li>
+                <li class="nav-link" v-if="isDataImportingEnabled()">
+                    <router-link to="/transaction/list?pageType=0&dateType=7" @click="openImportTransactionDialog">
+                        <v-icon class="nav-item-icon" :icon="mdiDatabaseImportOutline"/>
+                        <span class="nav-item-title">{{ tt('Import Transactions') }}</span>
+                    </router-link>
+                </li>
+                <li class="nav-link" v-if="isDataExportingEnabled()">
+                    <router-link to="/transaction/list?pageType=0&dateType=7" @click="openExportTransactionDialog">
+                        <v-icon class="nav-item-icon" :icon="mdiDatabaseExportOutline"/>
+                        <span class="nav-item-title">{{ tt('Export Transactions') }}</span>
+                    </router-link>
+                </li>
+                <li class="nav-section-title">
+                    <div class="title-wrapper">
                         <span class="title-text">{{ tt('Miscellaneous') }}</span>
                     </div>
                 </li>
@@ -205,7 +222,7 @@
 <script setup lang="ts">
 import SnackBar from '@/components/desktop/SnackBar.vue';
 
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 import { useDisplay, useTheme } from 'vuetify';
 import { useRoute } from 'vue-router';
@@ -218,7 +235,7 @@ import { useDesktopPageStore } from '@/stores/desktopPage.ts';
 
 import { APPLICATION_LOGO_PATH } from '@/consts/asset.ts';
 import { ThemeType } from '@/core/theme.ts';
-import { isUserScheduledTransactionEnabled } from '@/lib/server_settings.ts';
+import { isDataExportingEnabled, isDataImportingEnabled, isUserScheduledTransactionEnabled } from '@/lib/server_settings.ts';
 import { getSystemTheme } from '@/lib/ui/common.ts';
 
 import {
@@ -243,6 +260,8 @@ import {
     mdiWeatherNight,
     mdiAccount,
     mdiAccountCogOutline,
+    mdiDatabaseImportOutline,
+    mdiDatabaseExportOutline,
 } from '@mdi/js';
 
 const display = useDisplay();
@@ -291,6 +310,23 @@ function handleNavScroll(e: Event): void {
 function showAddDialogInTransactionListPage(): void {
     desktopPageStore.setShowAddTransactionDialogInTransactionList();
 }
+
+function openImportTransactionDialog(): void {
+    desktopPageStore.setShowImportTransactionDialogInTransactionList();
+    showVerticalOverlayMenu.value = false;
+}
+
+function openExportTransactionDialog(): void {
+    desktopPageStore.setShowExportTransactionDialogInTransactionList();
+    showVerticalOverlayMenu.value = false;
+}
+
+// The navigation drawer is an overlay below the large breakpoint. Leaving it
+// open after a navigation leaves the overlay covering the page and swallowing
+// every click, so it is closed whenever the route changes.
+watch(() => route.fullPath, () => {
+    showVerticalOverlayMenu.value = false;
+});
 </script>
 
 <style>

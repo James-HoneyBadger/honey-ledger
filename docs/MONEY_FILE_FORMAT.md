@@ -64,7 +64,7 @@ database declares more than 512 MiB and one holding more than 32 members, so a
 crafted cabinet cannot exhaust memory; a cabinet that is damaged or holds no Money
 database is reported as `ErrImportMicrosoftMoneyBackupFileNotReadable`.
 
-A backup is compressed, but a large ledger can still exceed the default 10 MiB
+A backup is compressed, but a large ledger can still exceed the default 64 MiB
 upload limit (`[data] max_import_file_size`); raise that setting for a `.mbf` that
 is refused for size rather than for content.
 

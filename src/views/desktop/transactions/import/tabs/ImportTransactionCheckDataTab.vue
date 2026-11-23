@@ -315,6 +315,13 @@
                 <span :class="{ 'text-error': selectedInvalidTransactionCount > 0 }">
                     {{ tt('format.misc.selectedCount', { count: getDisplayCount(selectedImportTransactionCount), totalCount: getDisplayCount(importTransactions.length) }) }}
                 </span>
+                <v-btn class="ms-3" color="primary" variant="tonal" size="small"
+                       :prepend-icon="mdiShapePlusOutline"
+                       :disabled="!!disabled || selectedInvalidTransactionCount < 1 || creatingMissingItems"
+                       :loading="creatingMissingItems"
+                       @click="createMissingItemsFromDialog">
+                    {{ tt('Create Missing Items') }}
+                </v-btn>
                 <v-spacer v-if="importTransactions.length > 10"/>
                 <span v-if="importTransactions.length > 10">{{ tt('Transactions Per Page') }}</span>
                 <v-select class="ms-2" density="compact" max-width="100"
@@ -420,15 +427,20 @@ import { useTransactionTagsStore } from '@/stores/transactionTag.ts';
 
 import { type NameValue, type NameNumeralValue, itemAndIndex, reversed, keys } from '@/core/base.ts';
 import { type NumeralSystem, AmountFilterType } from '@/core/numeral.ts';
+import { AccountCategory } from '@/core/account.ts';
 import { CategoryType } from '@/core/category.ts';
 import { TransactionType } from '@/core/transaction.ts';
 import { KnownFileType } from '@/core/file.ts';
 import { ImportTransactionColumnType } from '@/core/import_transaction.ts';
 
 import { Account, type CategorizedAccountWithDisplayBalance } from '@/models/account.ts';
-import type { TransactionCategory } from '@/models/transaction_category.ts';
+import { TransactionCategory, type TransactionCategoryCreateRequest, type TransactionCategoryCreateWithSubCategories } from '@/models/transaction_category.ts';
 import { TransactionTag } from '@/models/transaction_tag.ts';
 import { ImportTransaction } from '@/models/imported_transaction.ts';
+
+import { AUTOMATICALLY_CREATED_CATEGORY_ICON_ID } from '@/consts/icon.ts';
+import { DEFAULT_CATEGORY_COLOR } from '@/consts/color.ts';
+import { DEFAULT_TAG_GROUP_ID } from '@/consts/tag.ts';
 
 import {
     isString,
@@ -437,6 +449,7 @@ import {
     objectFieldToArrayItem
 } from '@/lib/common.ts';
 import {
+    getCurrentUnixTime,
     getUtcOffsetByUtcOffsetMinutes,
     getTimezoneOffsetMinutes,
     parseDateTimeFromUnixTime,
@@ -551,6 +564,7 @@ const countPerPage = ref<number>(10);
 const showCustomDateRangeDialog = ref<boolean>(false);
 const showCustomAmountFilterDialog = ref<boolean>(false);
 const showCustomDescriptionDialog = ref<boolean>(false);
+const creatingMissingItems = ref<boolean>(false);
 const currentAmountFilterType = ref<AmountFilterType | null>(null);
 const currentAmountFilterValue1 = ref<number>(0);
 const currentAmountFilterValue2 = ref<number>(0);
@@ -577,7 +591,9 @@ const hasVisibleIncomeCategories = computed<boolean>(() => transactionCategories
 const hasVisibleTransferCategories = computed<boolean>(() => transactionCategoriesStore.hasVisibleTransferCategories);
 
 const isEditing = computed<boolean>(() => !!editingTransaction.value);
-const canImport = computed<boolean>(() => selectedImportTransactionCount.value > 0 && selectedInvalidTransactionCount.value < 1);
+// Import stays available while rows are selected: missing accounts, categories
+// and tags are created on demand and the remaining invalid rows are skipped.
+const canImport = computed<boolean>(() => selectedImportTransactionCount.value > 0);
 
 const filterMenus = computed<ImportTransactionCheckDataMenuGroup[]>(() => [
     {
@@ -2026,6 +2042,350 @@ function showReplaceAllTypesDialog(): void {
     });
 }
 
+function getImportCategoryName(importTransaction: ImportTransaction): string {
+    if (importTransaction.originalCategoryName) {
+        return importTransaction.originalCategoryName;
+    }
+
+    // An import row without a category still needs one. Transfers, in
+    // particular, are valid only with a transfer category.
+    if (importTransaction.type === TransactionType.Transfer) {
+        return tt('Transfer');
+    } else if (importTransaction.type === TransactionType.Income) {
+        return tt('Other Income');
+    } else {
+        return tt('Miscellaneous');
+    }
+}
+
+function getMissingAccountCurrencyMap(): Record<string, string> {
+    const ret: Record<string, string> = {};
+
+    if (!props.importTransactions) {
+        return ret;
+    }
+
+    for (const importTransaction of props.importTransactions) {
+        if ((!importTransaction.sourceAccountId || !allAccountsMap.value[importTransaction.sourceAccountId]) && importTransaction.originalSourceAccountName) {
+            ret[importTransaction.originalSourceAccountName] = importTransaction.originalSourceAccountCurrency || defaultCurrency.value;
+        }
+
+        if (importTransaction.type === TransactionType.Transfer &&
+            (!importTransaction.destinationAccountId || !allAccountsMap.value[importTransaction.destinationAccountId]) &&
+            importTransaction.originalDestinationAccountName) {
+            ret[importTransaction.originalDestinationAccountName] = importTransaction.originalDestinationAccountCurrency || defaultCurrency.value;
+        }
+    }
+
+    return ret;
+}
+
+async function createMissingCategories(type: CategoryType, parentName: string): Promise<{ nameToId: Record<string, string>, createdCount: number }> {
+    const nameToId: Record<string, string> = {};
+    const namesToCreate: string[] = [];
+    let targetTransactionType = TransactionType.Income;
+
+    if (type === CategoryType.Expense) {
+        targetTransactionType = TransactionType.Expense;
+    } else if (type === CategoryType.Transfer) {
+        targetTransactionType = TransactionType.Transfer;
+    }
+
+    for (const importTransaction of (props.importTransactions || [])) {
+        if (importTransaction.type !== targetTransactionType) {
+            continue;
+        }
+
+        if (importTransaction.categoryId && allCategoriesMap.value[importTransaction.categoryId]) {
+            continue;
+        }
+
+        const name = getImportCategoryName(importTransaction);
+
+        if (!name || Object.prototype.hasOwnProperty.call(nameToId, name)) {
+            continue;
+        }
+
+        const existing = Object.values(allCategoriesMap.value).find(category => category.type === type &&
+            category.name === name &&
+            !!category.parentId && category.parentId !== '0');
+
+        if (existing) {
+            nameToId[name] = existing.id;
+        } else if (!namesToCreate.includes(name)) {
+            namesToCreate.push(name);
+        }
+    }
+
+    if (namesToCreate.length < 1) {
+        return { nameToId, createdCount: 0 };
+    }
+
+    let createdCount = 0;
+    const existingParent = Object.values(allCategoriesMap.value).find(category => category.type === type &&
+        category.name === parentName &&
+        (!category.parentId || category.parentId === '0'));
+
+    if (existingParent) {
+        // Add to the category group an earlier import created instead of
+        // creating a second group with the same name.
+        for (const name of namesToCreate) {
+            const category = TransactionCategory.createNewCategory(type, existingParent.id);
+            category.name = name;
+            category.icon = AUTOMATICALLY_CREATED_CATEGORY_ICON_ID;
+
+            const createdCategory = await transactionCategoriesStore.saveCategory({
+                category: category,
+                isEdit: false,
+                clientSessionId: ''
+            });
+
+            nameToId[createdCategory.name] = createdCategory.id;
+            createdCount++;
+        }
+
+        return { nameToId, createdCount };
+    }
+
+    const subCategories: TransactionCategoryCreateRequest[] = [];
+
+    for (const name of namesToCreate) {
+        const category = TransactionCategory.createNewCategory(type);
+        category.name = name;
+        category.icon = AUTOMATICALLY_CREATED_CATEGORY_ICON_ID;
+        subCategories.push(category.toCreateRequest(''));
+    }
+
+    const createdCategories = await transactionCategoriesStore.addCategories({
+        categories: [{
+            name: parentName,
+            type: type,
+            icon: AUTOMATICALLY_CREATED_CATEGORY_ICON_ID,
+            color: DEFAULT_CATEGORY_COLOR,
+            subCategories: subCategories
+        } as TransactionCategoryCreateWithSubCategories]
+    });
+
+    for (const categories of Object.values(createdCategories)) {
+        for (const category of categories) {
+            for (const subCategory of (category.subCategories || [])) {
+                nameToId[subCategory.name] = subCategory.id;
+                createdCount++;
+            }
+        }
+    }
+
+    return { nameToId, createdCount };
+}
+
+async function createMissingTags(): Promise<{ nameToId: Record<string, string>, createdCount: number }> {
+    const nameToId: Record<string, string> = {};
+    const namesToCreate: string[] = [];
+
+    for (const importTransaction of (props.importTransactions || [])) {
+        if (!importTransaction.tagIds || importTransaction.tagIds.length < 1) {
+            continue;
+        }
+
+        for (let i = 0; i < importTransaction.tagIds.length; i++) {
+            const tagId = importTransaction.tagIds[i] as string;
+
+            if (tagId && tagId !== '0' && allTagsMap.value[tagId]) {
+                continue;
+            }
+
+            const name = importTransaction.originalTagNames ? importTransaction.originalTagNames[i] : '';
+
+            if (!name || Object.prototype.hasOwnProperty.call(nameToId, name) || namesToCreate.includes(name)) {
+                continue;
+            }
+
+            const existing = Object.values(allTagsMap.value).find(tag => tag.name === name);
+
+            if (existing) {
+                nameToId[name] = existing.id;
+            } else {
+                namesToCreate.push(name);
+            }
+        }
+    }
+
+    if (namesToCreate.length < 1) {
+        return { nameToId, createdCount: 0 };
+    }
+
+    const createdTags = await transactionTagsStore.addTags({
+        tags: namesToCreate.map(name => TransactionTag.createNewTag(name, DEFAULT_TAG_GROUP_ID).toCreateRequest()),
+        groupId: DEFAULT_TAG_GROUP_ID,
+        skipExists: true
+    });
+
+    for (const tag of createdTags) {
+        nameToId[tag.name] = tag.id;
+    }
+
+    return { nameToId, createdCount: createdTags.length };
+}
+
+// Creates the accounts, categories and tags an import references but the
+// ledger does not have yet, then maps the parsed rows onto them. Without this a
+// file from another application can never become valid on a fresh install,
+// because every row references names that have no ids yet.
+async function createMissingItems(): Promise<number> {
+    if (!props.importTransactions || props.importTransactions.length < 1) {
+        return 0;
+    }
+
+    // Refresh from the server first so a repeated run reuses what an earlier
+    // run created instead of creating it again.
+    await Promise.allSettled([
+        accountsStore.loadAllAccounts({ force: true }),
+        transactionCategoriesStore.loadAllCategories({ force: true }),
+        transactionTagsStore.loadAllTags({ force: true })
+    ]);
+
+    let createdCount = 0;
+
+    const missingAccounts = getMissingAccountCurrencyMap();
+    const accountNameToId: Record<string, Account> = {};
+    const balanceTime = getCurrentUnixTime();
+
+    for (const name of keys(missingAccounts)) {
+        const existing = allAccountsMapByName.value[name];
+
+        if (existing) {
+            accountNameToId[name] = existing;
+            continue;
+        }
+
+        const account = Account.createNewAccount(AccountCategory.Cash, missingAccounts[name] || defaultCurrency.value, balanceTime);
+        account.name = name;
+
+        accountNameToId[name] = await accountsStore.saveAccount({
+            account: account,
+            subAccounts: [],
+            isEdit: false,
+            clientSessionId: ''
+        });
+        createdCount++;
+    }
+
+    for (const importTransaction of props.importTransactions) {
+        const sourceAccount = accountNameToId[importTransaction.originalSourceAccountName];
+
+        if ((!importTransaction.sourceAccountId || !allAccountsMap.value[importTransaction.sourceAccountId]) && sourceAccount) {
+            importTransaction.sourceAccountId = sourceAccount.id;
+        }
+
+        const destinationAccount = importTransaction.originalDestinationAccountName
+            ? accountNameToId[importTransaction.originalDestinationAccountName]
+            : undefined;
+
+        if (importTransaction.type === TransactionType.Transfer &&
+            (!importTransaction.destinationAccountId || !allAccountsMap.value[importTransaction.destinationAccountId]) &&
+            destinationAccount) {
+            importTransaction.destinationAccountId = destinationAccount.id;
+        }
+    }
+
+    const expenseCategories = await createMissingCategories(CategoryType.Expense, tt('Default Expense Category'));
+    const incomeCategories = await createMissingCategories(CategoryType.Income, tt('Default Income Category'));
+    const transferCategories = await createMissingCategories(CategoryType.Transfer, tt('Default Transfer Category'));
+    const addedCategoryCount = expenseCategories.createdCount + incomeCategories.createdCount + transferCategories.createdCount;
+
+    createdCount += addedCategoryCount;
+
+    if (addedCategoryCount > 0) {
+        await transactionCategoriesStore.loadAllCategories({ force: true }).catch(error => {
+            if (!error.isUpToDate) {
+                throw error;
+            }
+        });
+    }
+
+    for (const importTransaction of props.importTransactions) {
+        if (importTransaction.categoryId && allCategoriesMap.value[importTransaction.categoryId]) {
+            continue;
+        }
+
+        let nameToId: Record<string, string> = {};
+
+        if (importTransaction.type === TransactionType.Expense) {
+            nameToId = expenseCategories.nameToId;
+        } else if (importTransaction.type === TransactionType.Income) {
+            nameToId = incomeCategories.nameToId;
+        } else if (importTransaction.type === TransactionType.Transfer) {
+            nameToId = transferCategories.nameToId;
+        }
+
+        const categoryId = nameToId[getImportCategoryName(importTransaction)];
+
+        if (categoryId) {
+            importTransaction.categoryId = categoryId;
+        }
+    }
+
+    const tags = await createMissingTags();
+
+    createdCount += tags.createdCount;
+
+    if (tags.createdCount > 0) {
+        await transactionTagsStore.loadAllTags({ force: true }).catch(error => {
+            if (!error.isUpToDate) {
+                throw error;
+            }
+        });
+    }
+
+    for (const importTransaction of props.importTransactions) {
+        if (!importTransaction.tagIds || importTransaction.tagIds.length < 1) {
+            continue;
+        }
+
+        for (let i = 0; i < importTransaction.tagIds.length; i++) {
+            const tagId = importTransaction.tagIds[i] as string;
+
+            if (tagId && tagId !== '0' && allTagsMap.value[tagId]) {
+                continue;
+            }
+
+            const tagName = importTransaction.originalTagNames ? importTransaction.originalTagNames[i] : '';
+            const newTagId = tagName ? tags.nameToId[tagName] : undefined;
+
+            if (newTagId) {
+                importTransaction.tagIds[i] = newTagId;
+            }
+        }
+    }
+
+    for (const importTransaction of props.importTransactions) {
+        updateTransactionData(importTransaction);
+    }
+
+    return createdCount;
+}
+
+function createMissingItemsFromDialog(): void {
+    if (creatingMissingItems.value) {
+        return;
+    }
+
+    creatingMissingItems.value = true;
+
+    createMissingItems().then(count => {
+        creatingMissingItems.value = false;
+        snackbar.value?.showMessage('format.misc.createdMissingItems', {
+            count: getDisplayCount(count)
+        });
+    }).catch(error => {
+        creatingMissingItems.value = false;
+
+        if (!error.processed) {
+            snackbar.value?.showError(error);
+        }
+    });
+}
+
 function showBatchCreateInvalidItemDialog(type: BatchCreateDialogDataType, invalidItems: NameValue[]): void {
     if (isEditing.value) {
         return;
@@ -2282,6 +2642,7 @@ defineExpose({
     isEditing,
     canImport,
     updateAllTransactionsIsValid,
+    createMissingItems,
     reset,
     setCountPerPage
 });

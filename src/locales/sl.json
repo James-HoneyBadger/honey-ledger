@@ -137,7 +137,9 @@
             "clearTransactionsInAccountTip": "Tega dejanja NE MORETE razveljaviti. S tem boste izbrisali podatke o transakcijah v računu {account}. Za potrditev vnesite trenutno geslo.",
             "accountActivationAndResendValidationEmailTip": "Povezava za aktivacijo računa je bila poslana na vaš e-poštni naslov: {email}. Če e-pošte ne prejmete, ponovno vnesite geslo in kliknite spodnji gumb, da ponovno pošljete potrditveno e-pošto.",
             "resendValidationEmailTip": "Če ne prejmete e-pošte, ponovno vnesite geslo in kliknite spodnji gumb, da ponovno pošljete potrditveno e-pošto na: {email}",
-            "oauth2bindTip": "Prijavljate se v uporabniški račun {userName} z uporabo računa {providerName}. Za potrditev vnesite svoje geslo za Honey Ledger."
+            "oauth2bindTip": "Prijavljate se v uporabniški račun {userName} z uporabo računa {providerName}. Za potrditev vnesite svoje geslo za Honey Ledger.",
+            "createdMissingItems": "Created {count} missing accounts, categories or tags.",
+            "confirmImportInvalidTransactions": "{invalidCount} of the selected transactions cannot be imported and will be skipped. Import the remaining {count} transactions?"
         }
     },
     "dataExport": {
@@ -346,7 +348,7 @@
         "Haiti": "Haiti",
         "Havana": "Havana",
         "Indiana (East)": "Indiana (vzhod)",
-        "Turks and Caicos": "Otoki Turks\u00A0in Caicos",
+        "Turks and Caicos": "Otoki Turks in Caicos",
         "Asuncion": "Asuncion",
         "Atlantic Time (Canada)": "Atlantski čas (Kanada)",
         "Caracas": "Caracas",
@@ -2650,5 +2652,17 @@
     "Forget Saved Mapping": "Pozabi shranjeno preslikavo",
     "Saved mapping loaded": "Shranjena preslikava naložena",
     "Saved mapping forgotten": "Shranjena preslikava pozabljena",
-    "Show shared expense transactions only": "Prikaži samo transakcije deljenih stroškov"
+    "Show shared expense transactions only": "Prikaži samo transakcije deljenih stroškov",
+    "Data Transfer": "Data Transfer",
+    "Export Transactions": "Export Transactions",
+    "Import Data": "Import Data",
+    "Export the transactions that match the current filter.": "Export the transactions that match the current filter.",
+    "Import transactions from a file exported by another finance application or bank.": "Import transactions from a file exported by another finance application or bank.",
+    "Quicken File Format": "Quicken File Format",
+    "Microsoft Money File Format": "Microsoft Money File Format",
+    "Quicken Data File (QDF)": "Quicken Data File (QDF)",
+    "Microsoft Money Data File (MNY)": "Microsoft Money Data File (MNY)",
+    "Microsoft Money Backup File (MBF)": "Microsoft Money Backup File (MBF)",
+    "Create Missing Items": "Create Missing Items",
+    "Other Income": "Other Income"
 }

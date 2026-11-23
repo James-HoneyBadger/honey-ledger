@@ -7,12 +7,7 @@ import { TemplateType } from '@/core/template.ts';
 import { isUserLogined, isUserUnlocked } from '@/lib/userstate.ts';
 
 import MainLayout from '@/views/desktop/MainLayout.vue';
-import LoginPage from '@/views/desktop/LoginPage.vue';
-import SignUpPage from '@/views/desktop/SignupPage.vue';
 import VerifyEmailPage from '@/views/desktop/VerifyEmailPage.vue';
-import ForgetPasswordPage from '@/views/desktop/ForgetPasswordPage.vue';
-import ResetPasswordPage from '@/views/desktop/ResetPasswordPage.vue';
-import OAuth2CallbackPage from '@/views/desktop/OAuth2CallbackPage.vue';
 import UnlockPage from '@/views/desktop/UnlockPage.vue';
 
 import HomePage from '@/views/desktop/HomePage.vue';
@@ -40,14 +35,9 @@ import ExchangeRatesListPage from '@/views/desktop/exchangerates/ListPage.vue';
 import AboutPage from '@/views/desktop/AboutPage.vue';
 
 function checkLogin(): NavigationGuardReturn {
-    if (!isUserLogined()) {
-        return {
-            path: '/login',
-            replace: true
-        };
-    }
-
-    if (!isUserUnlocked()) {
+    // Honey Ledger has no accounts: the backend serves the single local user, so
+    // there is no login step. Only the optional application lock can intervene.
+    if (isUserLogined() && !isUserUnlocked()) {
         return {
             path: '/unlock',
             replace: true
@@ -60,30 +50,12 @@ function checkLogin(): NavigationGuardReturn {
 function checkLocked(): NavigationGuardReturn {
     if (!isUserLogined()) {
         return {
-            path: '/login',
-            replace: true
-        };
-    }
-
-    if (isUserUnlocked()) {
-        return {
             path: '/',
             replace: true
         };
     }
 
-    return true;
-}
-
-function checkNotLogin(): NavigationGuardReturn {
-    if (isUserLogined() && !isUserUnlocked()) {
-        return {
-            path: '/unlock',
-            replace: true
-        };
-    }
-
-    if (isUserLogined()) {
+    if (isUserUnlocked()) {
         return {
             path: '/',
             replace: true
@@ -227,13 +199,11 @@ const router = createRouter({
         },
         {
             path: '/login',
-            component: LoginPage,
-            beforeEnter: checkNotLogin
+            redirect: '/'
         },
         {
             path: '/signup',
-            component: SignUpPage,
-            beforeEnter: checkNotLogin
+            redirect: '/'
         },
         {
             path: '/verify_email',
@@ -246,27 +216,15 @@ const router = createRouter({
         },
         {
             path: '/forgetpassword',
-            component: ForgetPasswordPage,
-            beforeEnter: checkNotLogin
+            redirect: '/'
         },
         {
             path: '/resetpassword',
-            component: ResetPasswordPage,
-            props: route => ({
-                token: route.query['token']
-            })
+            redirect: '/'
         },
         {
             path: '/oauth2_callback',
-            component: OAuth2CallbackPage,
-            props: route => ({
-                token: route.query['token'],
-                provider: route.query['provider'],
-                platform: route.query['platform'],
-                userName: route.query['userName'],
-                errorCode: route.query['errorCode'],
-                errorMessage: route.query['errorMessage']
-            })
+            redirect: '/'
         },
         {
             path: '/unlock',

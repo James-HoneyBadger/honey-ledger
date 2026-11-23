@@ -77,37 +77,15 @@
                                                 </v-menu>
                                             </v-btn>
                                             <v-btn class="ms-3" color="default" variant="outlined"
-                                                   :disabled="loading" @click="importTransaction"
+                                                   @click="importTransaction"
                                                    v-if="isDataImportingEnabled()">
                                                 {{ tt('Import') }}
-                                                <v-menu activator="parent" :open-on-hover="true" v-if="isDataExportingEnabled()">
-                                                    <v-list>
-                                                        <v-list-item :disabled="loading || exportingData || !transactions || !transactions.length || transactions.length < 1"
-                                                                     @click="exportTransactions('csv')">
-                                                            <v-list-item-title>{{ tt('Export to CSV (Comma-separated values) File') }}</v-list-item-title>
-                                                        </v-list-item>
-                                                        <v-list-item :disabled="loading || exportingData || !transactions || !transactions.length || transactions.length < 1"
-                                                                     @click="exportTransactions('tsv')">
-                                                            <v-list-item-title>{{ tt('Export to TSV (Tab-separated values) File') }}</v-list-item-title>
-                                                        </v-list-item>
-                                                    </v-list>
-                                                </v-menu>
                                             </v-btn>
                                             <v-btn class="ms-3" color="default" variant="outlined"
-                                                   :disabled="loading || exportingData || !transactions || !transactions.length || transactions.length < 1" v-if="!isDataImportingEnabled() && isDataExportingEnabled()">
+                                                   :disabled="exportingData" @click="openExportDialog()"
+                                                   v-if="isDataExportingEnabled()">
                                                 {{ tt('Export') }}
-                                                <v-menu activator="parent">
-                                                    <v-list>
-                                                        <v-list-item :disabled="loading || exportingData || !transactions || !transactions.length || transactions.length < 1"
-                                                                     @click="exportTransactions('csv')">
-                                                            <v-list-item-title>{{ tt('Export to CSV (Comma-separated values) File') }}</v-list-item-title>
-                                                        </v-list-item>
-                                                        <v-list-item :disabled="loading || exportingData || !transactions || !transactions.length || transactions.length < 1"
-                                                                     @click="exportTransactions('tsv')">
-                                                            <v-list-item-title>{{ tt('Export to TSV (Tab-separated values) File') }}</v-list-item-title>
-                                                        </v-list-item>
-                                                    </v-list>
-                                                </v-menu>
+                                                <v-progress-circular indeterminate size="22" class="ms-2" v-if="exportingData"></v-progress-circular>
                                             </v-btn>
                                             <v-btn density="compact" color="default" variant="text" size="24"
                                                    class="ms-2" :icon="true" :loading="loading" @click="reload(true, false)">
@@ -646,6 +624,7 @@
     <edit-dialog ref="editDialog" :type="TransactionEditPageType.Transaction" />
     <split-expense-dialog ref="splitDialog" @saved="reload(false, false)" />
     <import-dialog ref="importDialog" :persistent="true" />
+    <export-transactions-dialog ref="exportDialog" @export="exportTransactions" />
 
     <v-dialog width="800" v-model="showFilterAccountDialog">
         <account-filter-settings-card type="transactionListCurrent" :dialog-mode="true"
@@ -674,6 +653,7 @@ import SnackBar from '@/components/desktop/SnackBar.vue';
 import EditDialog from './list/dialogs/EditDialog.vue';
 import SplitExpenseDialog from '@/views/desktop/insights/dialogs/SplitExpenseDialog.vue';
 import ImportDialog from './import/ImportDialog.vue';
+import ExportTransactionsDialog from './list/dialogs/ExportTransactionsDialog.vue';
 import AccountFilterSettingsCard from '@/views/desktop/common/cards/AccountFilterSettingsCard.vue';
 import CategoryFilterSettingsCard from '@/views/desktop/common/cards/CategoryFilterSettingsCard.vue';
 import TransactionTagFilterSettingsCard from '@/views/desktop/common/cards/TransactionTagFilterSettingsCard.vue';
@@ -785,6 +765,7 @@ type ConfirmDialogType = InstanceType<typeof ConfirmDialog>;
 type SnackBarType = InstanceType<typeof SnackBar>;
 type EditDialogType = InstanceType<typeof EditDialog>;
 type ImportDialogType = InstanceType<typeof ImportDialog>;
+type ExportTransactionsDialogType = InstanceType<typeof ExportTransactionsDialog>;
 
 interface TransactionListDisplayTotalAmount {
     income: string;
@@ -875,6 +856,7 @@ const confirmDialog = useTemplateRef<ConfirmDialogType>('confirmDialog');
 const snackbar = useTemplateRef<SnackBarType>('snackbar');
 const editDialog = useTemplateRef<EditDialogType>('editDialog');
 const importDialog = useTemplateRef<ImportDialogType>('importDialog');
+const exportDialog = useTemplateRef<ExportTransactionsDialogType>('exportDialog');
 const splitDialog = useTemplateRef<InstanceType<typeof SplitExpenseDialog>>('splitDialog');
 
 const activeTab = ref<string>('transactionPage');
@@ -1636,6 +1618,14 @@ function importTransaction(): void {
     });
 }
 
+function openExportDialog(defaultFileType?: string): void {
+    if (exportingData.value) {
+        return;
+    }
+
+    exportDialog.value?.open(defaultFileType);
+}
+
 function exportTransactions(fileExtension: string): void {
     if (exportingData.value) {
         return;
@@ -1781,6 +1771,21 @@ watch(() => desktopPageStore.showAddTransactionDialogInTransactionList, (newValu
         add();
     }
 });
+
+watch(() => desktopPageStore.showImportTransactionDialogInTransactionList, (newValue) => {
+    if (newValue) {
+        desktopPageStore.resetShowImportTransactionDialogInTransactionList();
+        nextTick(() => importTransaction());
+    }
+}, { immediate: true });
+
+watch(() => desktopPageStore.showExportTransactionDialogInTransactionList, (newValue) => {
+    if (newValue) {
+        const defaultFileType = desktopPageStore.exportTransactionFileType;
+        desktopPageStore.resetShowExportTransactionDialogInTransactionList();
+        nextTick(() => openExportDialog(defaultFileType));
+    }
+}, { immediate: true });
 
 init(props);
 </script>

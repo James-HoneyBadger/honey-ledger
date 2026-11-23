@@ -4,6 +4,8 @@
 package middlewares
 
 import (
+	"net"
+
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/James-HoneyBadger/honey-ledger/pkg/core"
@@ -154,6 +156,17 @@ func jwtAuthorization(config *settings.Config, source TokenSourceType) core.Midd
 		claims, tokenContext, err := getTokenClaims(c, source)
 
 		if err != nil {
+			// Honey Ledger has no accounts: a loopback caller is the owner of the
+			// single local ledger, so it is served without a token. The server
+			// only listens on the loopback address, so this cannot be reached
+			// from another machine.
+			if localClaims, localErr := getLocalUserClaims(c); localErr == nil {
+				c.SetTokenClaims(localClaims)
+				c.SetTokenContext("")
+				c.Next()
+				return
+			}
+
 			utils.PrintJsonErrorResult(c, err)
 			return
 		}
@@ -219,4 +232,32 @@ func parseToken(c *core.WebContext, source TokenSourceType) (*jwt.Token, *core.U
 	}
 
 	return services.Tokens.ParseToken(c, tokenString)
+}
+
+// getLocalUserClaims returns the claims of the single local user when the
+// request comes from the loopback address. It is the whole of Honey Ledger's
+// authentication: there is one user and one machine.
+func getLocalUserClaims(c *core.WebContext) (*core.UserTokenClaims, error) {
+	clientIP := net.ParseIP(c.ClientIP())
+
+	if clientIP == nil || !clientIP.IsLoopback() {
+		return nil, errs.ErrIPForbidden
+	}
+
+	user, err := services.Users.GetFirstUser(c)
+
+	if err != nil {
+		log.Errorf(c, "[authorization.getLocalUserClaims] cannot get the local user, because %s", err.Error())
+		return nil, err
+	}
+
+	if user == nil {
+		return nil, errs.ErrUserNotFound
+	}
+
+	return &core.UserTokenClaims{
+		Uid:      user.Uid,
+		Username: user.Username,
+		Type:     core.USER_TOKEN_TYPE_NORMAL,
+	}, nil
 }

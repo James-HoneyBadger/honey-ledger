@@ -137,7 +137,9 @@
             "clearTransactionsInAccountTip": "You CANNOT undo this action. This will clear your transactions data in {account}. Please enter your current password to confirm.",
             "accountActivationAndResendValidationEmailTip": "Account activation link has been sent to your email address: {email}, If you don't receive the mail, please fill password again and click the button below to resend the validation mail.",
             "resendValidationEmailTip": "If you don't receive the mail, please fill password again and click the button below to resend the validation mail to: {email}",
-            "oauth2bindTip": "You're signing in to the {userName} user using {providerName}. Please enter your Honey Ledger password to verify."
+            "oauth2bindTip": "You're signing in to the {userName} user using {providerName}. Please enter your Honey Ledger password to verify.",
+            "createdMissingItems": "Created {count} missing accounts, categories or tags.",
+            "confirmImportInvalidTransactions": "{invalidCount} of the selected transactions cannot be imported and will be skipped. Import the remaining {count} transactions?"
         }
     },
     "dataExport": {
@@ -2650,5 +2652,17 @@
     "Forget Saved Mapping": "Forget Saved Mapping",
     "Saved mapping loaded": "Saved mapping loaded",
     "Saved mapping forgotten": "Saved mapping forgotten",
-    "Show shared expense transactions only": "Show shared expense transactions only"
+    "Show shared expense transactions only": "Show shared expense transactions only",
+    "Data Transfer": "Data Transfer",
+    "Export Transactions": "Export Transactions",
+    "Import Data": "Import Data",
+    "Export the transactions that match the current filter.": "Export the transactions that match the current filter.",
+    "Import transactions from a file exported by another finance application or bank.": "Import transactions from a file exported by another finance application or bank.",
+    "Quicken File Format": "Quicken File Format",
+    "Microsoft Money File Format": "Microsoft Money File Format",
+    "Quicken Data File (QDF)": "Quicken Data File (QDF)",
+    "Microsoft Money Data File (MNY)": "Microsoft Money Data File (MNY)",
+    "Microsoft Money Backup File (MBF)": "Microsoft Money Backup File (MBF)",
+    "Create Missing Items": "Create Missing Items",
+    "Other Income": "Other Income"
 }

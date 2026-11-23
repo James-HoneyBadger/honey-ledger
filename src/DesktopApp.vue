@@ -98,6 +98,21 @@ if (window.honeyLedger?.onQuickAddTransaction) {
         router.push('/transaction/list');
     });
 }
+
+// Listen for the File menu import/export entries
+if (window.honeyLedger?.onImportTransactions) {
+    window.honeyLedger.onImportTransactions(() => {
+        desktopPageStore.setShowImportTransactionDialogInTransactionList();
+        void router.push('/transaction/list');
+    });
+}
+
+if (window.honeyLedger?.onExportTransactions) {
+    window.honeyLedger.onExportTransactions((fileType) => {
+        desktopPageStore.setShowExportTransactionDialogInTransactionList(fileType);
+        void router.push('/transaction/list');
+    });
+}
 </script>
 
 <style>

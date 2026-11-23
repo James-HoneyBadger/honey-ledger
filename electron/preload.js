@@ -18,5 +18,14 @@ contextBridge.exposeInMainWorld('honeyLedger', {
     // Listen for quick-add transaction shortcut from main process
     onQuickAddTransaction: (callback) => {
         ipcRenderer.on('quick-add-transaction', () => callback());
+    },
+
+    // Listen for the File menu import/export entries
+    onImportTransactions: (callback) => {
+        ipcRenderer.on('import-transactions', () => callback());
+    },
+
+    onExportTransactions: (callback) => {
+        ipcRenderer.on('export-transactions', (_event, fileType) => callback(fileType));
     }
 });

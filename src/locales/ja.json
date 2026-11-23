@@ -137,7 +137,9 @@
             "clearTransactionsInAccountTip": "You CANNOT undo this action. This will clear your transactions data in {account}. Please enter your current password to confirm.",
             "accountActivationAndResendValidationEmailTip": "アカウントの有効化リンクがメールアドレスに送信されました:{email}、メールが届かない場合はパスワードをもう一度入力して下のボタンをクリックして認証メールを再送信してください。",
             "resendValidationEmailTip": "メールが届かない場合は、パスワードをもう一度入力の上、以下のボタンをクリックして検証メールを再送信してください: {email}",
-            "oauth2bindTip": "You're signing in to the {userName} user using {providerName}. Please enter your Honey Ledger password to verify."
+            "oauth2bindTip": "You're signing in to the {userName} user using {providerName}. Please enter your Honey Ledger password to verify.",
+            "createdMissingItems": "Created {count} missing accounts, categories or tags.",
+            "confirmImportInvalidTransactions": "{invalidCount} of the selected transactions cannot be imported and will be skipped. Import the remaining {count} transactions?"
         }
     },
     "dataExport": {
@@ -2650,5 +2652,17 @@
     "Forget Saved Mapping": "保存されたマッピングを削除",
     "Saved mapping loaded": "保存されたマッピングを読み込みました",
     "Saved mapping forgotten": "保存されたマッピングを削除しました",
-    "Show shared expense transactions only": "共有した支出の取引のみを表示"
+    "Show shared expense transactions only": "共有した支出の取引のみを表示",
+    "Data Transfer": "Data Transfer",
+    "Export Transactions": "Export Transactions",
+    "Import Data": "Import Data",
+    "Export the transactions that match the current filter.": "Export the transactions that match the current filter.",
+    "Import transactions from a file exported by another finance application or bank.": "Import transactions from a file exported by another finance application or bank.",
+    "Quicken File Format": "Quicken File Format",
+    "Microsoft Money File Format": "Microsoft Money File Format",
+    "Quicken Data File (QDF)": "Quicken Data File (QDF)",
+    "Microsoft Money Data File (MNY)": "Microsoft Money Data File (MNY)",
+    "Microsoft Money Backup File (MBF)": "Microsoft Money Backup File (MBF)",
+    "Create Missing Items": "Create Missing Items",
+    "Other Income": "Other Income"
 }

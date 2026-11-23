@@ -137,7 +137,9 @@
             "clearTransactionsInAccountTip": "您不能還原此操作。此操作將會清除您在 {account} 帳戶中的交易資料。請輸入您目前的密碼以確認。",
             "accountActivationAndResendValidationEmailTip": "帳號啟用連結已經傳送到您的信箱地址：{email}，如果您沒有收到郵件，請再次輸入密碼並點擊下方的按鈕重新發送驗證郵件。",
             "resendValidationEmailTip": "如果您沒有收到郵件，請再次輸入密碼並點擊下方的按鈕重新發送驗證郵件到：{email}",
-            "oauth2bindTip": "您正在使用 {providerName} 登入 \"{userName}\" 使用者，請輸入您的 Honey Ledger 的密碼以進行驗證。"
+            "oauth2bindTip": "您正在使用 {providerName} 登入 \"{userName}\" 使用者，請輸入您的 Honey Ledger 的密碼以進行驗證。",
+            "createdMissingItems": "Created {count} missing accounts, categories or tags.",
+            "confirmImportInvalidTransactions": "{invalidCount} of the selected transactions cannot be imported and will be skipped. Import the remaining {count} transactions?"
         }
     },
     "dataExport": {
@@ -2650,5 +2652,17 @@
     "Forget Saved Mapping": "忘記已儲存的對應",
     "Saved mapping loaded": "已載入儲存的對應",
     "Saved mapping forgotten": "已忘記儲存的對應",
-    "Show shared expense transactions only": "僅顯示共用支出交易"
+    "Show shared expense transactions only": "僅顯示共用支出交易",
+    "Data Transfer": "Data Transfer",
+    "Export Transactions": "Export Transactions",
+    "Import Data": "Import Data",
+    "Export the transactions that match the current filter.": "Export the transactions that match the current filter.",
+    "Import transactions from a file exported by another finance application or bank.": "Import transactions from a file exported by another finance application or bank.",
+    "Quicken File Format": "Quicken File Format",
+    "Microsoft Money File Format": "Microsoft Money File Format",
+    "Quicken Data File (QDF)": "Quicken Data File (QDF)",
+    "Microsoft Money Data File (MNY)": "Microsoft Money Data File (MNY)",
+    "Microsoft Money Backup File (MBF)": "Microsoft Money Backup File (MBF)",
+    "Create Missing Items": "Create Missing Items",
+    "Other Income": "Other Income"
 }

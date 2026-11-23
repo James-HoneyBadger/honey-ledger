@@ -90,6 +90,20 @@
             </v-card>
         </v-col>
 
+        <v-col cols="12" v-if="isDataImportingEnabled()">
+            <v-card :class="{ 'disabled': loadingDataStatistics }" :title="tt('Import Data')">
+                <v-card-text>
+                    <span class="text-body-1">{{ tt('Import transactions from a file exported by another finance application or bank.') }}</span>
+                </v-card-text>
+
+                <v-card-text class="d-flex flex-wrap gap-4">
+                    <v-btn color="primary" variant="elevated" :disabled="loadingDataStatistics" @click="importData">
+                        {{ tt('Import Transactions') }}
+                    </v-btn>
+                </v-card-text>
+            </v-card>
+        </v-col>
+
         <v-col cols="12" v-if="isDataExportingEnabled()">
             <v-card :class="{ 'disabled': exportingData }" :title="tt('Export Data')">
                 <v-card-text>
@@ -262,12 +276,14 @@
     </v-row>
 
     <confirm-dialog ref="confirmDialog"/>
+    <import-dialog ref="importDialog" :persistent="true" />
     <snack-bar ref="snackbar" />
 </template>
 
 <script setup lang="ts">
 import ConfirmDialog from '@/components/desktop/ConfirmDialog.vue';
 import SnackBar from '@/components/desktop/SnackBar.vue';
+import ImportDialog from '@/views/desktop/transactions/import/ImportDialog.vue';
 
 import { ref, useTemplateRef } from 'vue';
 
@@ -278,7 +294,7 @@ import { useRootStore } from '@/stores/index.ts';
 import { useUserStore } from '@/stores/user.ts';
 
 import { isEquals } from '@/lib/common.ts';
-import { isDataExportingEnabled, isBackupEnabled } from '@/lib/server_settings.ts';
+import { isDataExportingEnabled, isDataImportingEnabled, isBackupEnabled } from '@/lib/server_settings.ts';
 import { startDownloadFile } from '@/lib/ui/common.ts';
 
 import type { BackupListResponse } from '@/models/backup.ts';
@@ -303,6 +319,7 @@ import {
 
 type ConfirmDialogType = InstanceType<typeof ConfirmDialog>;
 type SnackBarType = InstanceType<typeof SnackBar>;
+type ImportDialogType = InstanceType<typeof ImportDialog>;
 
 const { tt } = useI18n();
 const { dataStatistics, displayDataStatistics, getExportFileName } = useDataManagementPageBase();
@@ -312,6 +329,7 @@ const userStore = useUserStore();
 
 const confirmDialog = useTemplateRef<ConfirmDialogType>('confirmDialog');
 const snackbar = useTemplateRef<SnackBarType>('snackbar');
+const importDialog = useTemplateRef<ImportDialogType>('importDialog');
 
 const loadingDataStatistics = ref<boolean>(true);
 const exportingData = ref<boolean>(false);
@@ -341,6 +359,16 @@ function reloadUserDataStatistics(force: boolean): void {
     }).catch(error => {
         loadingDataStatistics.value = false;
 
+        if (!error.processed) {
+            snackbar.value?.showError(error);
+        }
+    });
+}
+
+function importData(): void {
+    importDialog.value?.open().then(() => {
+        reloadUserDataStatistics(false);
+    }).catch(error => {
         if (!error.processed) {
             snackbar.value?.showError(error);
         }

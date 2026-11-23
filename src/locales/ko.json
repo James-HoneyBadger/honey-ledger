@@ -137,7 +137,9 @@
             "clearTransactionsInAccountTip": "이 작업은 되돌릴 수 없습니다. {account}의 거래 데이터를 지웁니다. 계속하시려면 현재 비밀번호를 입력하세요.",
             "accountActivationAndResendValidationEmailTip": "계정 활성화 링크가 귀하의 이메일 주소({email})로 전송되었습니다. 메일을 받지 못하신 경우, 비밀번호를 다시 입력하고 아래 버튼을 클릭하여 확인 메일을 재전송하십시오.",
             "resendValidationEmailTip": "메일을 받지 못하신 경우, 비밀번호를 다시 입력하고 아래 버튼을 클릭하여 확인 메일을 {email}로 재전송하십시오.",
-            "oauth2bindTip": "{providerName}를 사용하여 {userName} 사용자로 로그인하고 있습니다. 확인을 위해 Honey Ledger 비밀번호를 입력하세요."
+            "oauth2bindTip": "{providerName}를 사용하여 {userName} 사용자로 로그인하고 있습니다. 확인을 위해 Honey Ledger 비밀번호를 입력하세요.",
+            "createdMissingItems": "Created {count} missing accounts, categories or tags.",
+            "confirmImportInvalidTransactions": "{invalidCount} of the selected transactions cannot be imported and will be skipped. Import the remaining {count} transactions?"
         }
     },
     "dataExport": {
@@ -2650,5 +2652,17 @@
     "Forget Saved Mapping": "저장된 매핑 지우기",
     "Saved mapping loaded": "저장된 매핑을 불러왔습니다",
     "Saved mapping forgotten": "저장된 매핑을 지웠습니다",
-    "Show shared expense transactions only": "공유 지출 거래만 표시"
+    "Show shared expense transactions only": "공유 지출 거래만 표시",
+    "Data Transfer": "Data Transfer",
+    "Export Transactions": "Export Transactions",
+    "Import Data": "Import Data",
+    "Export the transactions that match the current filter.": "Export the transactions that match the current filter.",
+    "Import transactions from a file exported by another finance application or bank.": "Import transactions from a file exported by another finance application or bank.",
+    "Quicken File Format": "Quicken File Format",
+    "Microsoft Money File Format": "Microsoft Money File Format",
+    "Quicken Data File (QDF)": "Quicken Data File (QDF)",
+    "Microsoft Money Data File (MNY)": "Microsoft Money Data File (MNY)",
+    "Microsoft Money Backup File (MBF)": "Microsoft Money Backup File (MBF)",
+    "Create Missing Items": "Create Missing Items",
+    "Other Income": "Other Income"
 }

@@ -10,6 +10,7 @@ export interface ExportTransactionDataRequest {
     readonly tagFilter: string;
     readonly amountFilter: string;
     readonly keyword: string;
+    readonly sharedFilter: string;
 }
 
 export interface ClearDataRequest {

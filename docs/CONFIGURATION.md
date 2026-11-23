@@ -461,7 +461,7 @@ Restrictions are given as a comma-separated list of type numbers:
 [data]
 enable_export = true
 enable_import = true
-max_import_file_size = 10485760
+max_import_file_size = 67108864
 enable_backup = true
 ```
 
@@ -469,7 +469,7 @@ enable_backup = true
 |-----|------|---------|-------------|
 | `enable_export` | bool | `true` | Allow exporting transaction data as CSV, TSV, or a ZIP archive |
 | `enable_import` | bool | `true` | Allow importing transaction data |
-| `max_import_file_size` | int | `10485760` | Max import file size in bytes (10 MB) |
+| `max_import_file_size` | int | `67108864` | Max import file size in bytes (64 MB) |
 | `enable_backup` | bool | `true` | Allow creating, downloading, restoring, and deleting database snapshots |
 
 ---

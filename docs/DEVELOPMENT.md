@@ -410,8 +410,8 @@ The `scripts/build.sh` script automates the build process:
 
 | Flag | Description |
 |------|-------------|
-| `--release` / `-r` | Set version string (e.g., `-r 1.4.1`) |
-| `--output` / `-o` | Output directory |
+| `--release` / `-r` | Build a release rather than a snapshot. It takes no value; the version comes from `package.json` |
+| `--output` / `-o` | Name of the package file, for `build.sh package` only |
 | `--no-lint` | Skip lint checks |
 | `--no-test` | Skip tests |
 

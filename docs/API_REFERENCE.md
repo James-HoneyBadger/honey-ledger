@@ -18,7 +18,6 @@ The machine-readable OpenAPI document is generated at [`openapi.json`](./openapi
 - [Authorization](#authorization)
 - [Tokens](#tokens)
 - [Users](#users)
-- [Cloud Settings](#cloud-settings)
 - [Two-Factor Authentication](#two-factor-authentication)
 - [Accounts](#accounts)
 - [Transactions](#transactions)
@@ -352,28 +351,6 @@ Sends a verification mail to the current user's address.
 ```
 GET /api/v1/users/external_auth/list.json
 POST /api/v1/users/external_auth/unlink.json
-```
-
----
-
-## Cloud Settings
-
-### Get Cloud Settings
-
-```
-GET /api/v1/users/settings/cloud/get.json
-```
-
-### Update Cloud Settings
-
-```
-POST /api/v1/users/settings/cloud/update.json
-```
-
-### Disable Cloud Sync
-
-```
-POST /api/v1/users/settings/cloud/disable.json
 ```
 
 ---
@@ -1144,6 +1121,23 @@ GET /api/v1/data/export.csv
 ```
 GET /api/v1/data/export.tsv
 ```
+
+Both return the transactions as a file download (`Content-Disposition: attachment`,
+named `<username>_<timestamp>.csv` or `.tsv`). Fields are quoted following
+RFC 4180, so a description containing a comma, quote or line break survives a
+re-import unchanged.
+
+The two endpoints accept the same filters as the transaction list:
+
+Query parameters: `type`, `category_ids`, `account_ids`, `tag_filter`, `amount_filter`, `keyword`, `max_time`, `min_time`, `shared_filter`.
+
+`type` is `1` balance modification, `2` income, `3` expense or `4` transfer; `0`
+or omitted means every type. `max_time` and `min_time` are Unix timestamps in
+seconds. `shared_filter` accepts `shared` or `unshared`, as in the transaction
+list. Omitting every parameter exports the whole ledger.
+
+Requires `enable_export = true`; otherwise the request fails, matching the
+`enable_export` capability advertised in `server_settings.js`.
 
 ---
 

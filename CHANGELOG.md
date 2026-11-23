@@ -8,6 +8,51 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 Releases before 1.4.2 are not catalogued here; see the commit history for
 details.
 
+## [Unreleased]
+
+### Added
+
+- HB Money Extractor (`cmd/hb-money-extractor`), a standalone program that reads a
+  Microsoft Money data file (`.mny`) or backup (`.mbf`) and writes CSV, Honey
+  Ledger CSV, TSV, an Excel workbook, JSON or QIF. It needs no server, database or
+  login, so a Money file can be converted on a machine that does not run Honey
+  Ledger. See [docs/HB_MONEY_EXTRACTOR.md](docs/HB_MONEY_EXTRACTOR.md) and
+  `scripts/build-money-extractor.sh`.
+- **Create Missing Items** in the import review creates the accounts, categories
+  and tags a file references but the ledger does not have, then maps the parsed
+  rows onto them.
+- **Data Transfer** entries in the sidebar, and an Import card in Settings → Data
+  Management, so importing and exporting no longer require finding the button in
+  the transaction list.
+- An export dialog offering CSV or TSV. The desktop app writes the file through a
+  native Save dialog instead of dropping it in the downloads folder.
+
+### Changed
+
+- CSV and TSV export quote fields that contain a comma, tab, quote or line break,
+  following RFC 4180, so descriptions and tags survive an export and re-import
+  unchanged. Files written by earlier versions still import.
+- The import review now applies the same rules the server applies when it saves a
+  transaction: a category must be a subcategory of the matching type, and hidden
+  accounts, categories and tags are refused. Rows that cannot be imported are
+  reported and skipped instead of rejecting the whole batch.
+- `max_import_file_size` defaults to 64 MiB (was 10 MiB).
+- `enable_import` and `enable_export` default to `true`, matching the documented
+  defaults. A configuration file that sets them explicitly is unaffected.
+- The request that parses an uploaded file may take five minutes, up from thirty
+  seconds, so a large Money file is not cut off mid-parse.
+
+### Fixed
+
+- Importing more than 65,535 IDs — roughly 32,000 transfers, which need two each —
+  overflowed a counter; IDs are now generated in chunks, so large ledgers import.
+- Comments longer than 255 characters aborted an import; they are truncated to the
+  limit instead.
+- A transaction whose latitude or longitude is exactly 0 was rejected as missing
+  the coordinate.
+- The import dialog's help link pointed at a page that does not exist; it now opens
+  the matching section of the user guide.
+
 ## [2.0.0] - 2026-11-22
 
 The first release under the GNU General Public License, and the first with no
@@ -30,7 +75,8 @@ which affect anyone shipping or embedding Honey Ledger.
   (`pkg/converters/msmoney/msisam`). It decodes the database header, the table
   definitions, the catalog that names the tables and the values in their rows,
   and reads a real Money Sunset database end to end: 165 accounts, 195
-  categories, 155 currencies and 39 293 transactions. The format is documented in
+  categories, 155 currencies and 39 293 transaction rows, of which 28 057 become
+  transactions (investment activity and split totals are skipped). The format is documented in
   [docs/MONEY_FILE_FORMAT.md](docs/MONEY_FILE_FORMAT.md).
 - Import dialog entries for Microsoft Money (`.mny`) and Quicken (`.qdf`) data
   files. Quicken files cannot be decoded, so selecting one explains which

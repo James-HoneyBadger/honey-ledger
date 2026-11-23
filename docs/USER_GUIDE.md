@@ -27,7 +27,6 @@ A complete guide to using Honey Ledger for personal finance management.
 - [Two-Factor Authentication](#two-factor-authentication)
 - [OAuth2 / Single Sign-On](#oauth2--single-sign-on)
 - [API Tokens](#api-tokens)
-- [Cloud Settings Sync](#cloud-settings-sync)
 - [Application Lock](#application-lock)
 - [Keyboard Shortcuts](#keyboard-shortcuts)
 
@@ -37,19 +36,19 @@ A complete guide to using Honey Ledger for personal finance management.
 
 ### First Login
 
-1. Launch the Honey Ledger desktop application.
-2. Log in with the default credentials:
-   - **Username:** `admin`
-   - **Password:** the random password printed to the console on first launch. It is shown once and is deliberately not written to the log file.
-3. Change your password immediately via **Settings → Security**.
+Honey Ledger is a single-user application that runs on your own computer, so it
+opens straight into your data: there is no login screen, and the API trusts
+connections from the local machine only.
 
-   If auto-login is enabled (the default) the login screen is skipped, so no password is needed. If you missed the one-time console output, set a new password from the command line:
+The single local user (`admin`) still has a password, which is asked for when an
+action needs confirmation, such as creating or restoring a backup. Change it in
+**Settings → Security**, or from the command line:
 
-   ```bash
-   ./honey-ledger userdata user-modify-password --username admin --password "newpassword"
-   ```
+```bash
+./honey-ledger userdata user-modify-password --username admin --password "newpassword"
+```
 
-4. Set your preferred currency, timezone, and language in **Settings → Basic**.
+Then set your preferred currency, timezone, and language in **Settings → Basic**.
 
 ### Initial Setup Checklist
 
@@ -258,13 +257,33 @@ Import transactions from external financial software and bank exports.
 
 ### Import Process
 
-1. Navigate to **Transactions**.
-2. Click **Import** (toolbar button).
-3. Select the file format from the dropdown.
-4. Upload your file.
-5. **For custom formats:** Define column mappings (which column maps to amount, date, category, etc.).
-6. **Review:** Check the parsed transactions. Use batch replace to fix categories or accounts.
-7. Click **Import** to save the transactions.
+1. Open the import dialog in any of three ways: the **Import** button at the top of
+   the transaction list, **Import Transactions** under **Data Transfer** in the
+   sidebar, or **Settings → Data Management → Import Transactions**. In the desktop
+   app, **File → Import Transactions…** opens it as well.
+2. Select the file format from the dropdown.
+3. Upload your file.
+4. **For custom formats:** Define column mappings (which column maps to amount, date, category, etc.).
+5. **Review:** Check the parsed transactions. Use batch replace to fix categories or accounts.
+6. Click **Import** to save the transactions.
+
+### Missing Accounts, Categories and Tags
+
+A file from another application names its own accounts, categories and tags, and a
+fresh ledger does not have them yet. Click **Create Missing Items** during the
+review, or just click **Import** — both create what the file references:
+
+- accounts, as cash accounts in the currency the file gives them,
+- expense, income and transfer categories, grouped under the existing
+  **Default Expense Category**, **Default Income Category** and
+  **Default Transfer Category** groups (created the first time they are needed),
+- tags, in the default tag group.
+
+Rows that still cannot be imported — a transfer with no destination account, for
+instance — are counted and skipped after a confirmation. Skipping them matters
+because the server saves an import in a single database transaction: one rejected
+row would undo the whole batch. So the review checks every row with the same rules
+the server applies before anything is sent.
 
 ### Migrating from Microsoft Money or Quicken
 
@@ -300,6 +319,11 @@ import the exported file here.
 Accounts, categories and transfers in either route are created during the import
 review, so a full history migrates in one pass.
 
+To get the data out of Money without Honey Ledger — on a machine that does not run
+it, or to feed another application — use [HB Money Extractor](./HB_MONEY_EXTRACTOR.md),
+a small standalone program built from this repository. It reads the same `.mny` and
+`.mbf` files and writes CSV, an Excel workbook, JSON or QIF.
+
 ### Custom Import Scripts
 
 For non-standard file formats, you can:
@@ -309,7 +333,11 @@ For non-standard file formats, you can:
 
 ### Import Tips
 
-- Set the correct file encoding if auto-detection fails (70+ encodings supported).
+- Set the correct file encoding if auto-detection fails (49 encodings are offered: Unicode plus the common single-byte and Asian charsets).
+- A file up to 64 MiB imports by default. For a larger Money ledger or bank export,
+  raise `max_import_file_size` in the configuration file (see
+  [Configuration](./CONFIGURATION.md)); the whole file is held in memory while it
+  is parsed.
 - Use **Batch Replace** to fix account/category assignments before importing.
 - Duplicate detection prevents importing the same transaction twice.
 - The column mapping you set for a custom format is remembered for files with the
@@ -331,10 +359,18 @@ Export your transactions to standard file formats.
 
 ### How to Export
 
-1. Open the **Statistics** or **Transactions** page.
-2. Apply any filters (date range, accounts, categories).
-3. Click **Export**.
-4. Select the format and download.
+1. Open the **Transactions** page, or **Settings → Data Management** to export
+   everything. The desktop app also has **File → Export Transactions to CSV…** and
+   **… to TSV…**.
+2. Apply any filters first (date range, accounts, categories, search text); the
+   export follows the current filter. The **Data Transfer → Export Transactions**
+   entry in the sidebar does the same.
+3. Click **Export** and choose CSV or TSV.
+4. Choose where to save the file. The desktop app opens a native Save dialog; in a
+   browser the file downloads.
+
+Fields that contain a comma, tab, quote or line break are quoted, so a description
+reaches the next application intact and survives being imported back.
 
 ---
 
@@ -654,22 +690,6 @@ For MCP (Model Context Protocol) access, generate a dedicated MCP token from the
 ### Revoking Tokens
 
 View all active tokens in **Settings → Security** and click **Revoke** to deactivate any token.
-
----
-
-## Cloud Settings Sync
-
-Sync your application preferences across multiple sessions or devices.
-
-### How It Works
-
-1. Go to **Settings → Cloud Sync**.
-2. Toggle the settings you want to sync.
-3. Synced settings are stored locally and applied automatically when you log in.
-
-### Syncable Settings
-
-Application theme, font size, timezone, chart preferences, filter settings, display options, and more.
 
 ---
 

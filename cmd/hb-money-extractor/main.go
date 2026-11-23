@@ -268,8 +268,13 @@ func isTerminal(file *os.File) bool {
 
 // describeError explains a failure in terms of the file the user picked.
 func describeError(err error) string {
-	if err.Error() == errs.ErrImportFileTypeNotSupported.Message {
+	switch err.Error() {
+	case errs.ErrImportFileTypeNotSupported.Message:
 		return "this is not a Microsoft Money data file (.mny) or backup (.mbf)"
+	case errs.ErrImportMicrosoftMoneyDataFileNotReadable.Message:
+		return "the file is damaged, or is not a complete Microsoft Money database"
+	case errs.ErrImportMicrosoftMoneyDataFileEncrypted.Message:
+		return "the file is password protected; remove the password in Microsoft Money and try again"
 	}
 
 	return err.Error()

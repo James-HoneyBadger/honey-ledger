@@ -467,9 +467,9 @@ enable_backup = true
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `enable_export` | bool | `true` | Allow exporting transaction data as CSV, TSV, or a ZIP archive |
-| `enable_import` | bool | `true` | Allow importing transaction data |
-| `max_import_file_size` | int | `67108864` | Max import file size in bytes (64 MB) |
+| `enable_export` | bool | `true` | Allow exporting transaction data as CSV or TSV. Database backups have their own switch, `enable_backup` |
+| `enable_import` | bool | `true` | Allow importing transaction data from a file. When `false` the Import entries are hidden and the parse and import endpoints refuse the request |
+| `max_import_file_size` | int | `67108864` | Max import file size in bytes (64 MB). The whole file is read into memory, so raise it only as far as your largest Money or bank export needs |
 | `enable_backup` | bool | `true` | Allow creating, downloading, restoring, and deleting database snapshots |
 
 ---

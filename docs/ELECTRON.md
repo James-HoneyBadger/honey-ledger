@@ -108,6 +108,7 @@ These URL paths are intercepted and forwarded to the Go backend:
 | `/avatar/` | User avatar images |
 | `/pictures/` | Transaction pictures |
 | `/proxy/` | Map tile and annotation proxies |
+| `/qrcode/` | QR code images |
 | `/mcp` | MCP JSON-RPC endpoint |
 | `/oauth2/` | OAuth2 login/callback |
 | `/healthz.json` | Health check |
@@ -115,15 +116,39 @@ These URL paths are intercepted and forwarded to the Go backend:
 
 ### Preload Script
 
-`electron/preload.js` exposes a limited API to the renderer:
+`electron/preload.js` exposes a limited API to the renderer over
+`window.honeyLedger`:
 
-```javascript
-window.honeyLedger = {
-    platform: process.platform,    // 'linux', 'darwin', 'win32'
-    isDesktopApp: true,
-    apiBaseUrl: 'app://honey-ledger'
-};
-```
+| Member | Kind | Purpose |
+|--------|------|---------|
+| `platform` | value | `'linux'`, `'darwin'` or `'win32'` |
+| `isDesktopApp` | value | Always `true`; the renderer uses it to tell desktop from browser |
+| `apiBaseUrl` | value | `app://honey-ledger`, the origin API calls go to |
+| `showNotification(title, body)` | send | Displays a native notification |
+| `onQuickAddTransaction(cb)` | listen | Fires when the quick-add shortcut is used |
+| `onImportTransactions(cb)` | listen | Fires when **File → Import Transactions…** is chosen |
+| `onExportTransactions(cb)` | listen | Fires with `'csv'` or `'tsv'` when an export menu entry is chosen |
+| `saveFile(fileName, data)` | invoke | Opens the native Save dialog and writes the file; resolves `true` when saved, `false` when cancelled |
+
+The main process does not receive file contents back from the renderer, and the
+renderer cannot write to disk itself.
+
+### Application Menu
+
+The native menu is built in `buildApplicationMenu()` after the window opens:
+
+| Menu | Entries |
+|------|---------|
+| **File** | **Import Transactions…** (`Ctrl`/`Cmd`+`O`), **Export Transactions to CSV…**, **Export Transactions to TSV…**, then Quit (Close on macOS) |
+| **Edit**, **View**, **Window** | The standard Electron roles |
+
+The import and export entries focus the window and send a message to the renderer,
+which routes to the transaction list and opens the matching dialog. They exist so
+import and export do not depend on finding the button inside the app.
+
+Exports are written through the native Save dialog (`ipcMain.handle('save-file')`),
+which defaults to the Downloads folder and suggests the name the renderer passes.
+A cancelled dialog writes nothing.
 
 ### Security
 

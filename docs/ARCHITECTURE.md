@@ -251,7 +251,7 @@ src/views/
 ```
 Pinia Stores
 ├── index.ts          (auth, notifications, app state)
-├── setting.ts        (app settings, locale, cloud sync)
+├── setting.ts        (app settings, locale)
 ├── user.ts           (current user profile)
 ├── transaction.ts    (transaction list, pagination)
 ├── account.ts        (account list, balances)

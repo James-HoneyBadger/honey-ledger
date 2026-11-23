@@ -121,9 +121,9 @@ func TestDefaultTransactionDataCSVFileConverterToExportedContent(t *testing.T) {
 	allTagIndexes[3] = []int64{2, 3}
 
 	expectedContent := "Time,Timezone,Type,Category,Sub Category,Account,Account Currency,Amount,Account2,Account2 Currency,Account2 Amount,Geographic Location,Tags,Description\n" +
-		"2024-09-01 12:34:56,+08:00,Income,Test Category,Test Sub Category,Test Account,CNY,123.45,,,,123.450000 45.670000,Test Tag;Test Tag2,Hello World\n" +
-		"2024-09-01 12:34:56,+00:00,Expense,Test Category2,Test Sub Category2,Test Account,CNY,-0.10,,,,,Test Tag,Foo#Bar\n" +
-		"2024-09-01 12:34:56,-05:00,Transfer,Test Category3,Test Sub Category3,Test Account,CNY,123.45,Test Account2,USD,17.35,,Test Tag2,T\te s t test\n"
+		"2024-09-01 12:34:56,+08:00,Income,Test Category,Test Sub Category,Test Account,CNY,123.45,,,,123.450000 45.670000,\"Test,Tag;Test Tag2\",\"Hello,World\"\n" +
+		"2024-09-01 12:34:56,+00:00,Expense,Test Category2,Test Sub Category2,Test Account,CNY,-0.10,,,,,\"Test,Tag\",Foo#Bar\n" +
+		"2024-09-01 12:34:56,-05:00,Transfer,Test Category3,Test Sub Category3,Test Account,CNY,123.45,Test Account2,USD,17.35,,Test Tag2,\"T\te\rs\nt\r\ntest\"\n"
 	actualContent, err := exporter.ToExportedContent(context, 123, transactions, accountMap, categoryMap, tagMap, allTagIndexes)
 
 	assert.Nil(t, err)
@@ -522,4 +522,42 @@ func TestDefaultTransactionDataCSVFileConverterParseImportedData_MissingRequired
 	_, _, _, _, _, _, err = importer.ParseImportedData(context, user, []byte("Time,Timezone,Type,Category,Sub Category,Account,Account Currency,Amount,Account2 Currency,Account2 Amount,Geographic Location,Tags,Description\n"+
 		"2024-09-01 00:00:00,+08:00,Balance Modification,,Test Sub Category,Test Account,CNY,123.45,,,,,"), time.UTC, converter.DefaultImporterOptions, nil, nil, nil, nil, nil)
 	assert.EqualError(t, err, errs.ErrMissingRequiredFieldInHeaderRow.Message)
+}
+
+func TestDefaultTransactionDataCSVFileConverterRoundTripKeepsQuotedValues(t *testing.T) {
+	context := core.NewNullContext()
+
+	transactions := []*models.Transaction{
+		{
+			TransactionId:     1,
+			TransactionTime:   1725165296000,
+			Type:              models.TRANSACTION_DB_TYPE_EXPENSE,
+			TimezoneUtcOffset: 480,
+			CategoryId:        2,
+			AccountId:         1,
+			Amount:            -1234,
+			Comment:           "Lunch, \"coffee\"\nsecond line",
+		},
+	}
+	accountMap := map[int64]*models.Account{
+		1: {AccountId: 1, Name: "Cash", Currency: "CNY"},
+	}
+	categoryMap := map[int64]*models.TransactionCategory{
+		1: {CategoryId: 1, Type: models.CATEGORY_TYPE_EXPENSE, Name: "Food"},
+		2: {CategoryId: 2, Type: models.CATEGORY_TYPE_EXPENSE, ParentCategoryId: 1, Name: "Meals"},
+	}
+	tagMap := map[int64]*models.TransactionTag{
+		1: {TagId: 1, Name: "Lunch, Work"},
+	}
+
+	exported, err := DefaultTransactionDataCSVFileConverter.ToExportedContent(context, 1, transactions, accountMap, categoryMap, tagMap, map[int64][]int64{1: {1}})
+	assert.Nil(t, err)
+
+	user := &models.User{Uid: 1, DefaultCurrency: "CNY"}
+	imported, _, _, _, _, _, err := DefaultTransactionDataCSVFileConverter.ParseImportedData(context, user, exported, time.UTC, converter.DefaultImporterOptions, nil, nil, nil, nil, nil)
+
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(imported))
+	assert.Equal(t, "Lunch, \"coffee\"\nsecond line", imported[0].Comment)
+	assert.Equal(t, []string{"Lunch, Work"}, imported[0].OriginalTagNames)
 }

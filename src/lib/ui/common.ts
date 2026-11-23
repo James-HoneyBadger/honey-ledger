@@ -179,6 +179,20 @@ export function openTextFileContent({ allowedExtensions }: { allowedExtensions: 
 }
 
 export function startDownloadFile(fileName: string, fileData: Blob): void {
+    // The desktop app writes through the native save dialog; a blob download in
+    // Electron would silently land in the default downloads folder.
+    const saveFile = window.honeyLedger?.saveFile;
+
+    if (saveFile) {
+        fileData.arrayBuffer().then(buffer => {
+            return saveFile(fileName, new Uint8Array(buffer));
+        }).catch(error => {
+            logger.error('failed to save file', error);
+        });
+
+        return;
+    }
+
     const dataObjectUrl = URL.createObjectURL(fileData);
     const dataLink = document.createElement('a');
 

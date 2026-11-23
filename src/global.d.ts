@@ -28,6 +28,7 @@ interface Window {
         onQuickAddTransaction?: (callback: () => void) => void;
         onImportTransactions?: (callback: () => void) => void;
         onExportTransactions?: (callback: (fileType: string) => void) => void;
+        saveFile?: (fileName: string, data: Uint8Array) => Promise<boolean>;
     };
 }
 

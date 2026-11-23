@@ -566,14 +566,37 @@ func (s *TransactionService) CreateTransaction(c core.Context, transaction *mode
 	})
 }
 
+// generateUuidsInChunks returns count UUIDs. The generator takes a uint16 count,
+// so a large import (for example a ledger with many transfers, which need two
+// UUIDs each) asks for them in chunks instead of failing or overflowing.
+func (s *TransactionService) generateUuidsInChunks(uuidType uuid.UuidType, count int) ([]int64, error) {
+	const maxChunkSize = 50000
+
+	uuids := make([]int64, 0, count)
+
+	for count > 0 {
+		chunkSize := min(count, maxChunkSize)
+		chunk := s.GenerateUuids(uuidType, uint16(chunkSize))
+
+		if len(chunk) < chunkSize {
+			return nil, errs.ErrSystemIsBusy
+		}
+
+		uuids = append(uuids, chunk...)
+		count -= chunkSize
+	}
+
+	return uuids, nil
+}
+
 // BatchCreateTransactions saves new transactions to database
 func (s *TransactionService) BatchCreateTransactions(c core.Context, uid int64, transactions []*models.Transaction, allTagIds map[int][]int64, processHandler core.TaskProcessUpdateHandler) error {
 	now := time.Now().Unix()
 	currentProcess := float64(0)
 	processUpdateStep := int(math.Max(100.0, float64(len(transactions)/100.0)))
 
-	needTransactionUuidCount := uint16(0)
-	needTagIndexUuidCount := uint16(0)
+	needTransactionUuidCount := 0
+	needTagIndexUuidCount := 0
 
 	for i := 0; i < len(transactions); i++ {
 		transaction := transactions[i]
@@ -607,19 +630,16 @@ func (s *TransactionService) BatchCreateTransactions(c core.Context, uid int64, 
 		}
 
 		uniqueTagIds := utils.ToUniqueInt64Slice(tagIds)
-		needTagIndexUuidCount += uint16(len(uniqueTagIds))
+		needTagIndexUuidCount += len(uniqueTagIds)
 	}
 
-	if needTransactionUuidCount > uint16(65535) || needTagIndexUuidCount > uint16(65535) {
-		return errs.ErrImportTooManyTransaction
+	transactionUuids, err := s.generateUuidsInChunks(uuid.UUID_TYPE_TRANSACTION, needTransactionUuidCount)
+
+	if err != nil {
+		return err
 	}
 
-	transactionUuids := s.GenerateUuids(uuid.UUID_TYPE_TRANSACTION, needTransactionUuidCount)
 	transactionUuidIndex := 0
-
-	if len(transactionUuids) < int(needTransactionUuidCount) {
-		return errs.ErrSystemIsBusy
-	}
 
 	for i := 0; i < len(transactions); i++ {
 		transaction := transactions[i]
@@ -633,12 +653,13 @@ func (s *TransactionService) BatchCreateTransactions(c core.Context, uid int64, 
 		}
 	}
 
-	tagIndexUuids := s.GenerateUuids(uuid.UUID_TYPE_TAG_INDEX, needTagIndexUuidCount)
-	tagIndexUuidIndex := 0
+	tagIndexUuids, err := s.generateUuidsInChunks(uuid.UUID_TYPE_TAG_INDEX, needTagIndexUuidCount)
 
-	if len(tagIndexUuids) < int(needTagIndexUuidCount) {
-		return errs.ErrSystemIsBusy
+	if err != nil {
+		return err
 	}
+
+	tagIndexUuidIndex := 0
 
 	allTransactionTagIndexes := make(map[int64][]*models.TransactionTagIndex)
 	allTransactionTagIds := make(map[int64][]int64)

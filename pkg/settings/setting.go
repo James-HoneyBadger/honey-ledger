@@ -1031,8 +1031,8 @@ func loadUserConfiguration(config *Config, configFile *ini.File, sectionName str
 }
 
 func loadDataConfiguration(config *Config, configFile *ini.File, sectionName string) error {
-	config.EnableDataExport = getConfigItemBoolValue(configFile, sectionName, "enable_export", false)
-	config.EnableDataImport = getConfigItemBoolValue(configFile, sectionName, "enable_import", false)
+	config.EnableDataExport = getConfigItemBoolValue(configFile, sectionName, "enable_export", true)
+	config.EnableDataImport = getConfigItemBoolValue(configFile, sectionName, "enable_import", true)
 	config.EnableBackup = getConfigItemBoolValue(configFile, sectionName, "enable_backup", true)
 	config.MaxImportFileSize = getConfigItemUint32Value(configFile, sectionName, "max_import_file_size", defaultImportFileMaxSize)
 

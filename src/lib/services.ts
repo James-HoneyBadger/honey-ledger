@@ -24,6 +24,7 @@ import {
     BASE_AMAP_API_PROXY_URL_PATH,
     DEFAULT_API_TIMEOUT,
     DEFAULT_UPLOAD_API_TIMEOUT,
+    DEFAULT_IMPORT_PARSE_API_TIMEOUT,
     DEFAULT_EXPORT_API_TIMEOUT,
     DEFAULT_IMPORT_API_TIMEOUT,
     DEFAULT_CLEAR_ALL_TRANSACTIONS_API_TIMEOUT,
@@ -716,7 +717,7 @@ export default {
             geoOrder: geoOrder,
             tagSeparator: tagSeparator
         }, {
-            timeout: DEFAULT_UPLOAD_API_TIMEOUT
+            timeout: DEFAULT_IMPORT_PARSE_API_TIMEOUT
         } as ApiRequestConfig);
     },
     importTransactions: (req: TransactionImportRequest): ApiResponsePromise<number> => {

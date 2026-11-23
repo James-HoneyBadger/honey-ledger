@@ -173,3 +173,4 @@ admin/admin
 
 # Electron Builder output
 /electron/dist/
+/dist-extractor/

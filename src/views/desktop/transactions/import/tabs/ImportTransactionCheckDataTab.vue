@@ -1663,34 +1663,94 @@ function editTransaction(transaction: ImportTransaction): void {
     }
 }
 
+function getCategoryTypeOfTransaction(type: number): CategoryType | undefined {
+    if (type === TransactionType.Income) {
+        return CategoryType.Income;
+    } else if (type === TransactionType.Expense) {
+        return CategoryType.Expense;
+    } else if (type === TransactionType.Transfer) {
+        return CategoryType.Transfer;
+    }
+
+    return undefined;
+}
+
+// These checks mirror the ones the server applies when it saves a transaction.
+// If the two disagree the whole import is rejected, so the rules are kept in
+// sync instead of trusting that a chosen item will be accepted.
+function isAccountUsable(accountId: string): boolean {
+    const account = allAccountsMap.value[accountId];
+
+    if (!account) {
+        return false;
+    }
+
+    if (account.parentId && account.parentId !== '0') {
+        const parent = allAccountsMap.value[account.parentId];
+
+        if (!parent || parent.hidden) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function isCategoryUsable(categoryId: string, transactionType: number): boolean {
+    const category = allCategoriesMap.value[categoryId];
+
+    if (!category || category.hidden) {
+        return false;
+    }
+
+    if (!category.parentId || category.parentId === '0') {
+        return false;
+    }
+
+    if (category.type !== getCategoryTypeOfTransaction(transactionType)) {
+        return false;
+    }
+
+    const parent = allCategoriesMap.value[category.parentId];
+    return !!parent && !parent.hidden;
+}
+
 function updateTransactionData(transaction: ImportTransaction): void {
     transaction.valid = transaction.isTransactionValid();
 
     if (transaction.categoryId && allCategoriesMap.value[transaction.categoryId]) {
         transaction.actualCategoryName = allCategoriesMap.value[transaction.categoryId]!.name;
-    } else {
-        if (transaction.type !== TransactionType.ModifyBalance) {
+    }
+
+    if (transaction.type !== TransactionType.ModifyBalance) {
+        if (!transaction.categoryId || !isCategoryUsable(transaction.categoryId, transaction.type)) {
             transaction.valid = false;
         }
     }
 
     if (transaction.sourceAccountId && allAccountsMap.value[transaction.sourceAccountId]) {
         transaction.actualSourceAccountName = allAccountsMap.value[transaction.sourceAccountId]!.name;
-    } else {
+    }
+
+    if (!transaction.sourceAccountId || !isAccountUsable(transaction.sourceAccountId)) {
         transaction.valid = false;
     }
 
     if (transaction.destinationAccountId && allAccountsMap.value[transaction.destinationAccountId]) {
         transaction.actualDestinationAccountName = allAccountsMap.value[transaction.destinationAccountId]!.name;
-    } else {
-        if (transaction.type === TransactionType.Transfer) {
+    }
+
+    if (transaction.type === TransactionType.Transfer) {
+        if (!transaction.destinationAccountId || !isAccountUsable(transaction.destinationAccountId)) {
             transaction.valid = false;
         }
     }
 
     if (transaction.tagIds && transaction.tagIds.length) {
         for (const tagId of transaction.tagIds) {
-            if (!tagId || !allTagsMap.value[tagId]) {
+            const tag = allTagsMap.value[tagId];
+
+            if (!tagId || !tag || tag.hidden) {
                 transaction.valid = false;
                 break;
             }
@@ -2066,12 +2126,12 @@ function getMissingAccountCurrencyMap(): Record<string, string> {
     }
 
     for (const importTransaction of props.importTransactions) {
-        if ((!importTransaction.sourceAccountId || !allAccountsMap.value[importTransaction.sourceAccountId]) && importTransaction.originalSourceAccountName) {
+        if ((!importTransaction.sourceAccountId || !isAccountUsable(importTransaction.sourceAccountId)) && importTransaction.originalSourceAccountName) {
             ret[importTransaction.originalSourceAccountName] = importTransaction.originalSourceAccountCurrency || defaultCurrency.value;
         }
 
         if (importTransaction.type === TransactionType.Transfer &&
-            (!importTransaction.destinationAccountId || !allAccountsMap.value[importTransaction.destinationAccountId]) &&
+            (!importTransaction.destinationAccountId || !isAccountUsable(importTransaction.destinationAccountId)) &&
             importTransaction.originalDestinationAccountName) {
             ret[importTransaction.originalDestinationAccountName] = importTransaction.originalDestinationAccountCurrency || defaultCurrency.value;
         }
@@ -2096,7 +2156,7 @@ async function createMissingCategories(type: CategoryType, parentName: string): 
             continue;
         }
 
-        if (importTransaction.categoryId && allCategoriesMap.value[importTransaction.categoryId]) {
+        if (importTransaction.categoryId && isCategoryUsable(importTransaction.categoryId, importTransaction.type)) {
             continue;
         }
 
@@ -2106,9 +2166,18 @@ async function createMissingCategories(type: CategoryType, parentName: string): 
             continue;
         }
 
-        const existing = Object.values(allCategoriesMap.value).find(category => category.type === type &&
-            category.name === name &&
-            !!category.parentId && category.parentId !== '0');
+        const existing = Object.values(allCategoriesMap.value).find(category => {
+            if (category.type !== type || category.name !== name || category.hidden) {
+                return false;
+            }
+
+            if (!category.parentId || category.parentId === '0') {
+                return false;
+            }
+
+            const parent = allCategoriesMap.value[category.parentId];
+            return !!parent && !parent.hidden;
+        });
 
         if (existing) {
             nameToId[name] = existing.id;
@@ -2124,6 +2193,7 @@ async function createMissingCategories(type: CategoryType, parentName: string): 
     let createdCount = 0;
     const existingParent = Object.values(allCategoriesMap.value).find(category => category.type === type &&
         category.name === parentName &&
+        !category.hidden &&
         (!category.parentId || category.parentId === '0'));
 
     if (existingParent) {
@@ -2190,7 +2260,7 @@ async function createMissingTags(): Promise<{ nameToId: Record<string, string>, 
         for (let i = 0; i < importTransaction.tagIds.length; i++) {
             const tagId = importTransaction.tagIds[i] as string;
 
-            if (tagId && tagId !== '0' && allTagsMap.value[tagId]) {
+            if (tagId && tagId !== '0' && allTagsMap.value[tagId] && !allTagsMap.value[tagId]!.hidden) {
                 continue;
             }
 
@@ -2200,7 +2270,7 @@ async function createMissingTags(): Promise<{ nameToId: Record<string, string>, 
                 continue;
             }
 
-            const existing = Object.values(allTagsMap.value).find(tag => tag.name === name);
+            const existing = Object.values(allTagsMap.value).find(tag => tag.name === name && !tag.hidden);
 
             if (existing) {
                 nameToId[name] = existing.id;
@@ -2221,7 +2291,12 @@ async function createMissingTags(): Promise<{ nameToId: Record<string, string>, 
     });
 
     for (const tag of createdTags) {
-        nameToId[tag.name] = tag.id;
+        // The server returns an existing tag with the same name even when it is
+        // hidden; a hidden tag would make the transaction invalid, so it is not
+        // mapped and the row is reported instead of failing the whole import.
+        if (tag && !tag.hidden) {
+            nameToId[tag.name] = tag.id;
+        }
     }
 
     return { nameToId, createdCount: createdTags.length };
@@ -2253,7 +2328,7 @@ async function createMissingItems(): Promise<number> {
     for (const name of keys(missingAccounts)) {
         const existing = allAccountsMapByName.value[name];
 
-        if (existing) {
+        if (existing && isAccountUsable(existing.id)) {
             accountNameToId[name] = existing;
             continue;
         }
@@ -2273,7 +2348,7 @@ async function createMissingItems(): Promise<number> {
     for (const importTransaction of props.importTransactions) {
         const sourceAccount = accountNameToId[importTransaction.originalSourceAccountName];
 
-        if ((!importTransaction.sourceAccountId || !allAccountsMap.value[importTransaction.sourceAccountId]) && sourceAccount) {
+        if ((!importTransaction.sourceAccountId || !isAccountUsable(importTransaction.sourceAccountId)) && sourceAccount) {
             importTransaction.sourceAccountId = sourceAccount.id;
         }
 
@@ -2282,7 +2357,7 @@ async function createMissingItems(): Promise<number> {
             : undefined;
 
         if (importTransaction.type === TransactionType.Transfer &&
-            (!importTransaction.destinationAccountId || !allAccountsMap.value[importTransaction.destinationAccountId]) &&
+            (!importTransaction.destinationAccountId || !isAccountUsable(importTransaction.destinationAccountId)) &&
             destinationAccount) {
             importTransaction.destinationAccountId = destinationAccount.id;
         }
@@ -2304,7 +2379,7 @@ async function createMissingItems(): Promise<number> {
     }
 
     for (const importTransaction of props.importTransactions) {
-        if (importTransaction.categoryId && allCategoriesMap.value[importTransaction.categoryId]) {
+        if (importTransaction.categoryId && isCategoryUsable(importTransaction.categoryId, importTransaction.type)) {
             continue;
         }
 
@@ -2345,7 +2420,7 @@ async function createMissingItems(): Promise<number> {
         for (let i = 0; i < importTransaction.tagIds.length; i++) {
             const tagId = importTransaction.tagIds[i] as string;
 
-            if (tagId && tagId !== '0' && allTagsMap.value[tagId]) {
+            if (tagId && tagId !== '0' && allTagsMap.value[tagId] && !allTagsMap.value[tagId]!.hidden) {
                 continue;
             }
 

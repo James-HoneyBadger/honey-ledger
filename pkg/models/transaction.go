@@ -156,8 +156,10 @@ type TransactionWithAccountBalance struct {
 
 // TransactionGeoLocationRequest represents all parameters of transaction geographic location info update request
 type TransactionGeoLocationRequest struct {
-	Latitude  float64 `json:"latitude" binding:"required"`
-	Longitude float64 `json:"longitude" binding:"required"`
+	// Zero is a valid coordinate (the equator and the prime meridian), so the
+	// range is checked instead of requiring a non-zero value.
+	Latitude  float64 `json:"latitude" binding:"min=-90,max=90"`
+	Longitude float64 `json:"longitude" binding:"min=-180,max=180"`
 }
 
 // TransactionCreateRequest represents all parameters of transaction creation request

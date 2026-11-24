@@ -5,8 +5,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/csv"
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,7 +12,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/xuri/excelize/v2"
 
 	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/msmoney"
 )
@@ -43,86 +40,6 @@ func TestParseFormats(t *testing.T) {
 
 	_, err = parseFormats("pdf")
 	assert.NotNil(t, err)
-}
-
-func TestFormatAmount(t *testing.T) {
-	assert.Equal(t, "12.34", formatAmount(1234))
-	assert.Equal(t, "-0.05", formatAmount(-5))
-	assert.Equal(t, "0.00", formatAmount(0))
-}
-
-func TestCSVKeepsAmountsSignedAndQuotesText(t *testing.T) {
-	var out bytes.Buffer
-	assert.Nil(t, writeCSV(&out, sampleData()))
-
-	rows, err := csv.NewReader(strings.NewReader(strings.TrimPrefix(out.String(), "\ufeff"))).ReadAll()
-	assert.Nil(t, err)
-	assert.Equal(t, 4, len(rows))
-	assert.Equal(t, "-12.34", rows[1][4])
-	assert.Equal(t, "5000.00", rows[2][4])
-	assert.Equal(t, "-100.00", rows[3][4])
-	assert.Equal(t, "Savings", rows[3][5])
-	assert.Equal(t, "Milk, \"2%\"\nand eggs", rows[1][8])
-}
-
-func TestHoneyLedgerCSVHasImportableLayout(t *testing.T) {
-	var out bytes.Buffer
-	assert.Nil(t, writeHoneyLedgerCSV(&out, sampleData()))
-
-	rows, err := csv.NewReader(&out).ReadAll()
-	assert.Nil(t, err)
-	assert.Equal(t, "Sub Category", rows[0][4])
-	assert.Equal(t, "2024-03-05 00:00:00", rows[1][0])
-	assert.Equal(t, "+00:00", rows[1][1])
-	assert.Equal(t, "12.34", rows[1][7])
-	assert.Equal(t, "Transfer", rows[3][2])
-	assert.Equal(t, "Savings", rows[3][8])
-	assert.Equal(t, "100.00", rows[3][10])
-}
-
-func TestJSONHasAccountsAndTransactions(t *testing.T) {
-	var out bytes.Buffer
-	assert.Nil(t, writeJSON(&out, sampleData()))
-
-	var document struct {
-		Accounts     []map[string]any `json:"accounts"`
-		Transactions []map[string]any `json:"transactions"`
-	}
-
-	assert.Nil(t, json.Unmarshal(out.Bytes(), &document))
-	assert.Equal(t, 3, len(document.Accounts))
-	assert.Equal(t, 3, len(document.Transactions))
-	assert.Equal(t, "-12.34", document.Transactions[0]["amount"])
-}
-
-func TestQIFWritesBothSidesOfATransfer(t *testing.T) {
-	var out bytes.Buffer
-	assert.Nil(t, writeQIF(&out, sampleData()))
-	text := out.String()
-
-	assert.Equal(t, 3, strings.Count(text, "!Account"))
-	assert.Contains(t, text, "D03/05/2024\nT-100.00\nL[Savings]\n^")
-	assert.Contains(t, text, "D03/05/2024\nT100.00\nL[Checking]\n^")
-	assert.Contains(t, text, "LFood:Groceries")
-	assert.Contains(t, text, "PMilk, \"2%\" and eggs")
-}
-
-func TestXLSXHasBothSheets(t *testing.T) {
-	var out bytes.Buffer
-	assert.Nil(t, writeXLSX(&out, sampleData()))
-
-	file, err := excelize.OpenReader(&out)
-	assert.Nil(t, err)
-
-	defer file.Close()
-
-	rows, err := file.GetRows("Transactions")
-	assert.Nil(t, err)
-	assert.Equal(t, 4, len(rows))
-
-	accounts, err := file.GetRows("Accounts")
-	assert.Nil(t, err)
-	assert.Equal(t, 4, len(accounts))
 }
 
 func TestWriteFormatNeverOverwrites(t *testing.T) {

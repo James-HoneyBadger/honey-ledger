@@ -6,8 +6,9 @@ Access driver refuses to open a Money file, even though the page layout below is
 Jet 4 with a few Money-specific structures.
 
 Everything in this document was verified against a real Microsoft Money Sunset
-database. The reader that implements it lives in
-[`pkg/converters/msmoney/msisam`](../pkg/converters/msmoney/msisam).
+database. The reader that implements it lives in the shared
+[money-engine module](../../money-engine) ([`msisam`](../../money-engine/msisam)); Honey Ledger
+consumes it through [`pkg/converters/msmoney`](../pkg/converters/msmoney).
 
 ## Why this matters
 
@@ -233,8 +234,9 @@ are in `CAT`, accounts in `ACCT` and currencies in `CRNC`.
 
 ## Reading a ledger out of a data file
 
-The importer in [`pkg/converters/msmoney`](../pkg/converters/msmoney) turns the
-tables into transactions. Four rules matter:
+The extraction in the money-engine module turns the tables into transactions;
+the importer in [`pkg/converters/msmoney`](../pkg/converters/msmoney) adapts them
+for the ledger. Four rules matter:
 
 - **A transfer is stored twice**, once in each account, with `hacctLink` naming
   the other account. Only the row that takes the money out becomes a transfer, so

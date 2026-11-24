@@ -262,14 +262,23 @@ func (c *DataTableTransactionDataImporter) ParseImportedData(ctx core.Context, u
 
 			relatedAccountId = account2.AccountId
 
+			relatedAmountText := ""
+
 			if dataTable.HasColumn(datatable.TRANSACTION_DATA_TABLE_RELATED_AMOUNT) {
-				relatedAccountAmount, err = utils.ParseAmount(dataRow.GetData(datatable.TRANSACTION_DATA_TABLE_RELATED_AMOUNT))
+				relatedAmountText = dataRow.GetData(datatable.TRANSACTION_DATA_TABLE_RELATED_AMOUNT)
+			}
+
+			if relatedAmountText != "" {
+				relatedAccountAmount, err = utils.ParseAmount(relatedAmountText)
 
 				if err != nil {
-					log.Errorf(ctx, "[data_table_transaction_data_importer.ParseImportedData] cannot parse acmount2 \"%s\" in data row \"index:%d\" for user \"uid:%d\", because %s", dataRow.GetData(datatable.TRANSACTION_DATA_TABLE_RELATED_AMOUNT), dataRowIndex, user.Uid, err.Error())
+					log.Errorf(ctx, "[data_table_transaction_data_importer.ParseImportedData] cannot parse acmount2 \"%s\" in data row \"index:%d\" for user \"uid:%d\", because %s", relatedAmountText, dataRowIndex, user.Uid, err.Error())
 					return nil, nil, nil, nil, nil, nil, errs.ErrAmountInvalid
 				}
 			} else if transactionDbType == models.TRANSACTION_DB_TYPE_TRANSFER_OUT {
+				// An empty related amount means the receiving amount is not
+				// known, so the outgoing amount is used instead of inventing
+				// one.
 				relatedAccountAmount = amount
 			}
 		}

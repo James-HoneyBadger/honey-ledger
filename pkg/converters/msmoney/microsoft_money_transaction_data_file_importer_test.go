@@ -5,7 +5,6 @@ package msmoney
 
 import (
 	"math"
-	"os"
 	"testing"
 	"time"
 
@@ -385,6 +384,25 @@ func TestMicrosoftMoneyTransactionDataFileParseImportedData(t *testing.T) {
 	assert.Equal(t, "Groceries", expense.OriginalCategoryName)
 	assert.Equal(t, "Checking", expense.OriginalSourceAccountName)
 
+	var transfers []*models.ImportTransaction
+
+	for _, transaction := range imported {
+		if transaction.Type == models.TRANSACTION_DB_TYPE_TRANSFER_OUT {
+			transfers = append(transfers, transaction)
+		}
+	}
+
+	require.Len(t, transfers, 2)
+
+	byAmount := make(map[int64]int64, len(transfers))
+
+	for _, transfer := range transfers {
+		byAmount[transfer.Amount] = transfer.RelatedAccountAmount
+	}
+
+	assert.Equal(t, int64(500), byAmount[int64(500)], "the receiving row's amount becomes the destination amount")
+	assert.Equal(t, int64(18173), byAmount[int64(18173)], "a split fragment falls back to the source amount")
+
 	assert.NotEmpty(t, accounts)
 	assert.NotEmpty(t, expenseCategories)
 	assert.NotEmpty(t, incomeCategories)
@@ -405,117 +423,4 @@ func TestMicrosoftMoneyTransactionDataFileParseImportedDataRejectsUnknownFormat(
 
 	_, _, _, _, _, _, err = importer.ParseImportedData(context, user, corrupt, time.UTC, converter.DefaultImporterOptions, nil, nil, nil, nil, nil)
 	assert.ErrorIs(t, err, errs.ErrImportMicrosoftMoneyDataFileNotReadable)
-}
-
-func TestFlattenMicrosoftMoneyTransactions(t *testing.T) {
-	checking := &microsoftMoneyAccount{Name: "Checking", Currency: "USD"}
-	savings := &microsoftMoneyAccount{Name: "Savings", Currency: "USD"}
-	accounts := map[int64]*microsoftMoneyAccount{100: checking, 200: savings}
-	categories := map[int64]*microsoftMoneyCategory{
-		1001: {Name: "Groceries", Parent: "Food"},
-		1002: {Name: "Wages"},
-	}
-
-	moment := time.Date(2011, time.May, 19, 0, 0, 0, 0, time.UTC)
-
-	rows := []*microsoftMoneyTransactionRow{
-		{Handle: 1, Account: 100, Category: 1001, Amount: -250000, Time: moment, Memo: "Lunch"},
-		{Handle: 2, Account: 100, Category: 1002, Amount: 150000, Time: moment},
-		{Handle: 3, Account: 100, Link: 200, Amount: -50000, Time: moment},
-		{Handle: 4, Account: 200, Link: 100, Amount: 50000, Time: moment},
-		{Handle: 5, Account: 100, Amount: 0, Time: moment},
-		{Handle: 6, Account: 100, Security: 9, Amount: -750000, Time: moment},
-		{Handle: 7, Account: 100, Amount: -7218000, Time: moment},
-		{Handle: 8, Account: 100, Link: 200, Amount: -1817300, Time: moment},
-		{Handle: 9, Account: 100, Amount: -10000, Time: time.Time{}},
-		{Handle: 10, Account: 999, Amount: -10000, Time: moment},
-	}
-
-	parents := map[int64]bool{7: true}
-
-	transactions, skipped := flattenMicrosoftMoneyTransactions(rows, parents, accounts, categories)
-	require.Len(t, transactions, 4)
-	assert.Equal(t, 6, skipped)
-
-	assert.Equal(t, models.TRANSACTION_TYPE_EXPENSE, transactions[0].Type)
-	assert.Equal(t, int64(2500), transactions[0].Amount)
-	assert.Equal(t, "Food", transactions[0].Category)
-	assert.Equal(t, "Groceries", transactions[0].SubCategory)
-	assert.Equal(t, "Lunch", transactions[0].Description)
-
-	assert.Equal(t, models.TRANSACTION_TYPE_INCOME, transactions[1].Type)
-	assert.Equal(t, int64(1500), transactions[1].Amount)
-	assert.Empty(t, transactions[1].Category)
-	assert.Equal(t, "Wages", transactions[1].SubCategory)
-
-	assert.Equal(t, models.TRANSACTION_TYPE_TRANSFER, transactions[2].Type)
-	assert.Equal(t, int64(500), transactions[2].Amount)
-	assert.Equal(t, savings, transactions[2].Related)
-	assert.Empty(t, transactions[2].SubCategory)
-
-	assert.Equal(t, models.TRANSACTION_TYPE_TRANSFER, transactions[3].Type)
-	assert.Equal(t, int64(18173), transactions[3].Amount)
-	assert.Equal(t, savings, transactions[3].Related)
-}
-
-func TestConvertMicrosoftMoneyAmount(t *testing.T) {
-	assert.Equal(t, int64(2500), convertMicrosoftMoneyAmount(250000))
-	assert.Equal(t, int64(-2500), convertMicrosoftMoneyAmount(-250000))
-	assert.Equal(t, int64(1), convertMicrosoftMoneyAmount(50))
-	assert.Equal(t, int64(0), convertMicrosoftMoneyAmount(49))
-	assert.Equal(t, int64(-1), convertMicrosoftMoneyAmount(-50))
-	assert.Equal(t, int64(12346), convertMicrosoftMoneyAmount(1234567))
-}
-
-func TestTrimMicrosoftMoneyText(t *testing.T) {
-	assert.Equal(t, "Principal", trimMicrosoftMoneyText(microsoftMoneyByteOrderMark+"Principal"))
-	assert.Equal(t, "Interest", trimMicrosoftMoneyText(" Interest "))
-	assert.Equal(t, "", trimMicrosoftMoneyText(""))
-}
-
-// TestRealDatabaseImport imports a Microsoft Money data file, and runs only when
-// such a file is supplied.
-func TestRealDatabaseImport(t *testing.T) {
-	path := os.Getenv("MSISAM_SAMPLE_FILE")
-
-	if path == "" {
-		t.Skip("set MSISAM_SAMPLE_FILE to a Microsoft Money data file")
-	}
-
-	data, err := os.ReadFile(path)
-	require.NoError(t, err)
-
-	moneyData, err := readMicrosoftMoneyData(core.NewNullContext(), data)
-	require.NoError(t, err)
-	require.NotEmpty(t, moneyData.Transactions)
-
-	types := map[models.TransactionType]int{}
-	categorized := 0
-
-	for _, transaction := range moneyData.Transactions {
-		types[transaction.Type]++
-		assert.NotEmpty(t, transaction.Account.Name)
-		assert.NotZero(t, transaction.Amount)
-		assert.False(t, transaction.Time.IsZero())
-
-		if transaction.Type == models.TRANSACTION_TYPE_TRANSFER {
-			require.NotNil(t, transaction.Related)
-			assert.NotEmpty(t, transaction.Related.Name)
-			assert.Empty(t, transaction.SubCategory)
-
-			continue
-		}
-
-		if transaction.SubCategory != "" {
-			categorized++
-		}
-	}
-
-	// Money allows a transaction without a category, but most carry one.
-	assert.Greater(t, categorized, len(moneyData.Transactions)/2)
-
-	assert.Greater(t, types[models.TRANSACTION_TYPE_EXPENSE], 100)
-	assert.Greater(t, types[models.TRANSACTION_TYPE_INCOME], 100)
-	assert.Greater(t, types[models.TRANSACTION_TYPE_TRANSFER], 100)
-	assert.Greater(t, moneyData.Skipped, 0)
 }

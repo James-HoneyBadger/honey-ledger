@@ -4,21 +4,15 @@
 package msmoney
 
 import (
-	"bytes"
 	"time"
 
 	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/converter"
-	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/msmoney/msisam"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/core"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/errs"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/log"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/models"
+	engine "github.com/James-HoneyBadger/money-engine/msmoney"
 )
-
-// microsoftMoneyDatabaseSignature is the engine name a Microsoft Money data file
-// carries at byte offset 4. Money keeps its tables in a Jet database, but names
-// the engine MSISAM, which is why no Jet or Access driver opens the file.
-var microsoftMoneyDatabaseSignature = []byte(msisam.Magic)
 
 // microsoftMoneyTransactionDataFileImporter defines the structure of Microsoft Money data file importer
 type microsoftMoneyTransactionDataFileImporter struct{}
@@ -26,36 +20,17 @@ type microsoftMoneyTransactionDataFileImporter struct{}
 // Initialize a Microsoft Money transaction data file importer singleton instance
 var MicrosoftMoneyTransactionDataFileImporter = &microsoftMoneyTransactionDataFileImporter{}
 
-// IsMicrosoftMoneyDataFile returns whether the data carries a Microsoft Money (MSISAM) header
-func IsMicrosoftMoneyDataFile(data []byte) bool {
-	return len(data) >= 4+len(microsoftMoneyDatabaseSignature) && bytes.Equal(data[4:4+len(microsoftMoneyDatabaseSignature)], microsoftMoneyDatabaseSignature)
-}
-
 // ParseImportedData returns the imported data by parsing the Microsoft Money
 // transaction data
 func (c *microsoftMoneyTransactionDataFileImporter) ParseImportedData(ctx core.Context, user *models.User, data []byte, defaultTimezone *time.Location, additionalOptions converter.TransactionDataImporterOptions, accountMap map[string]*models.Account, expenseCategoryMap map[string]map[string]*models.TransactionCategory, incomeCategoryMap map[string]map[string]*models.TransactionCategory, transferCategoryMap map[string]map[string]*models.TransactionCategory, tagMap map[string]*models.TransactionTag) (models.ImportedTransactionSlice, []*models.Account, []*models.TransactionCategory, []*models.TransactionCategory, []*models.TransactionCategory, []*models.TransactionTag, error) {
-	// A backup (.mbf) is a cabinet wrapping the database, so it is unwrapped
-	// first and the database inside is treated exactly like a selected .mny file.
-	if IsMicrosoftMoneyBackupFile(data) {
-		database, err := extractMicrosoftMoneyDatabaseFromBackup(ctx, data)
-
-		if err != nil {
-			log.Errorf(ctx, "[microsoft_money_transaction_data_file_importer.ParseImportedData] cannot extract the Microsoft Money database from the backup of user \"uid:%d\", because %s", user.Uid, err.Error())
-			return nil, nil, nil, nil, nil, nil, errs.Or(err, errs.ErrImportMicrosoftMoneyBackupFileNotReadable)
-		}
-
-		data = database
-	}
-
-	if !IsMicrosoftMoneyDataFile(data) {
-		log.Warnf(ctx, "[microsoft_money_transaction_data_file_importer.ParseImportedData] the import file of user \"uid:%d\" has no Microsoft Money database header", user.Uid)
-		return nil, nil, nil, nil, nil, nil, errs.ErrImportFileTypeNotSupported
-	}
-
-	moneyData, err := readMicrosoftMoneyData(ctx, data)
+	// A backup (.mbf) is a cabinet wrapping the database, so the engine
+	// unwraps it and treats the database inside exactly like a selected .mny
+	// file.
+	moneyData, err := engine.ExtractMicrosoftMoneyData(ctx, data)
 
 	if err != nil {
-		return nil, nil, nil, nil, nil, nil, err
+		log.Errorf(ctx, "[microsoft_money_transaction_data_file_importer.ParseImportedData] cannot extract the Microsoft Money data of the file of user \"uid:%d\", because %s", user.Uid, err.Error())
+		return nil, nil, nil, nil, nil, nil, mappedExtractionError(err)
 	}
 
 	if moneyData.Skipped > 0 {

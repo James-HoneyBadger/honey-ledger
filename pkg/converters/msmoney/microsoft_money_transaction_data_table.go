@@ -8,12 +8,22 @@ import (
 	"github.com/James-HoneyBadger/honey-ledger/pkg/core"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/models"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/utils"
+	engine "github.com/James-HoneyBadger/money-engine/msmoney"
 )
 
 var microsoftMoneyTransactionTypeNameMapping = map[models.TransactionType]string{
 	models.TRANSACTION_TYPE_INCOME:   utils.IntToString(int(models.TRANSACTION_TYPE_INCOME)),
 	models.TRANSACTION_TYPE_EXPENSE:  utils.IntToString(int(models.TRANSACTION_TYPE_EXPENSE)),
 	models.TRANSACTION_TYPE_TRANSFER: utils.IntToString(int(models.TRANSACTION_TYPE_TRANSFER)),
+}
+
+// microsoftMoneyExtractedTypeNameMapping maps the extracted transaction kinds
+// onto the type names the generic importer parses, keeping the values the same
+// as the transaction type numbers of the ledger.
+var microsoftMoneyExtractedTypeNameMapping = map[string]string{
+	engine.ExtractedTypeIncome:   utils.IntToString(int(models.TRANSACTION_TYPE_INCOME)),
+	engine.ExtractedTypeExpense:  utils.IntToString(int(models.TRANSACTION_TYPE_EXPENSE)),
+	engine.ExtractedTypeTransfer: utils.IntToString(int(models.TRANSACTION_TYPE_TRANSFER)),
 }
 
 var microsoftMoneyTransactionSupportedColumns = map[datatable.TransactionDataTableColumn]bool{
@@ -26,13 +36,14 @@ var microsoftMoneyTransactionSupportedColumns = map[datatable.TransactionDataTab
 	datatable.TRANSACTION_DATA_TABLE_AMOUNT:                   true,
 	datatable.TRANSACTION_DATA_TABLE_RELATED_ACCOUNT_NAME:     true,
 	datatable.TRANSACTION_DATA_TABLE_RELATED_ACCOUNT_CURRENCY: true,
+	datatable.TRANSACTION_DATA_TABLE_RELATED_AMOUNT:           true,
 	datatable.TRANSACTION_DATA_TABLE_DESCRIPTION:              true,
 }
 
 // microsoftMoneyTransactionDataTable defines the structure of the Microsoft Money
 // transaction data table
 type microsoftMoneyTransactionDataTable struct {
-	allData []*microsoftMoneyTransaction
+	allData []engine.ExtractedTransaction
 }
 
 // microsoftMoneyTransactionDataRow defines the structure of the Microsoft Money
@@ -95,35 +106,39 @@ func (t *microsoftMoneyTransactionDataRowIterator) Next(ctx core.Context, user *
 	t.currentIndex++
 
 	return &microsoftMoneyTransactionDataRow{
-		items: buildMicrosoftMoneyTransactionRowItems(t.dataTable.allData[t.currentIndex]),
+		items: buildMicrosoftMoneyTransactionRowItems(&t.dataTable.allData[t.currentIndex]),
 	}, nil
 }
 
 // buildMicrosoftMoneyTransactionRowItems converts a transaction into the values
 // of the columns the ledger imports.
-func buildMicrosoftMoneyTransactionRowItems(transaction *microsoftMoneyTransaction) map[datatable.TransactionDataTableColumn]string {
+func buildMicrosoftMoneyTransactionRowItems(transaction *engine.ExtractedTransaction) map[datatable.TransactionDataTableColumn]string {
 	items := make(map[datatable.TransactionDataTableColumn]string, len(microsoftMoneyTransactionSupportedColumns))
 
 	// A Money transaction stores a date without a time, so it is formatted in
 	// its own location rather than converted to the default timezone.
 	items[datatable.TRANSACTION_DATA_TABLE_TRANSACTION_TIME] = utils.FormatUnixTimeToLongDateTime(transaction.Time.Unix(), nil)
-	items[datatable.TRANSACTION_DATA_TABLE_TRANSACTION_TYPE] = microsoftMoneyTransactionTypeNameMapping[transaction.Type]
+	items[datatable.TRANSACTION_DATA_TABLE_TRANSACTION_TYPE] = microsoftMoneyExtractedTypeNameMapping[transaction.Type]
 	items[datatable.TRANSACTION_DATA_TABLE_AMOUNT] = utils.FormatAmount(transaction.Amount)
-	items[datatable.TRANSACTION_DATA_TABLE_ACCOUNT_NAME] = transaction.Account.Name
-	items[datatable.TRANSACTION_DATA_TABLE_ACCOUNT_CURRENCY] = transaction.Account.Currency
+	items[datatable.TRANSACTION_DATA_TABLE_ACCOUNT_NAME] = transaction.Account
+	items[datatable.TRANSACTION_DATA_TABLE_ACCOUNT_CURRENCY] = transaction.Currency
 
-	if transaction.Related != nil {
-		items[datatable.TRANSACTION_DATA_TABLE_RELATED_ACCOUNT_NAME] = transaction.Related.Name
-		items[datatable.TRANSACTION_DATA_TABLE_RELATED_ACCOUNT_CURRENCY] = transaction.Related.Currency
+	if transaction.TransferAccount != "" || transaction.TransferCurrency != "" {
+		items[datatable.TRANSACTION_DATA_TABLE_RELATED_ACCOUNT_NAME] = transaction.TransferAccount
+		items[datatable.TRANSACTION_DATA_TABLE_RELATED_ACCOUNT_CURRENCY] = transaction.TransferCurrency
 	}
 
-	if transaction.Type != models.TRANSACTION_TYPE_TRANSFER {
+	if transaction.TransferAmount != 0 {
+		items[datatable.TRANSACTION_DATA_TABLE_RELATED_AMOUNT] = utils.FormatAmount(transaction.TransferAmount)
+	}
+
+	if transaction.Type != engine.ExtractedTypeTransfer {
 		items[datatable.TRANSACTION_DATA_TABLE_CATEGORY] = transaction.Category
 		items[datatable.TRANSACTION_DATA_TABLE_SUB_CATEGORY] = transaction.SubCategory
 	}
 
-	if transaction.Description != "" {
-		items[datatable.TRANSACTION_DATA_TABLE_DESCRIPTION] = transaction.Description
+	if transaction.Memo != "" {
+		items[datatable.TRANSACTION_DATA_TABLE_DESCRIPTION] = transaction.Memo
 	}
 
 	return items
@@ -131,6 +146,6 @@ func buildMicrosoftMoneyTransactionRowItems(transaction *microsoftMoneyTransacti
 
 // createNewMicrosoftMoneyTransactionDataTable returns the data table that holds
 // the transactions of a Microsoft Money data file
-func createNewMicrosoftMoneyTransactionDataTable(allData []*microsoftMoneyTransaction) *microsoftMoneyTransactionDataTable {
+func createNewMicrosoftMoneyTransactionDataTable(allData []engine.ExtractedTransaction) *microsoftMoneyTransactionDataTable {
 	return &microsoftMoneyTransactionDataTable{allData: allData}
 }

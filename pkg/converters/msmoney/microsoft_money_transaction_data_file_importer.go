@@ -11,7 +11,6 @@ import (
 	"github.com/James-HoneyBadger/honey-ledger/pkg/errs"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/log"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/models"
-	engine "github.com/James-HoneyBadger/money-engine/msmoney"
 )
 
 // microsoftMoneyTransactionDataFileImporter defines the structure of Microsoft Money data file importer
@@ -23,10 +22,10 @@ var MicrosoftMoneyTransactionDataFileImporter = &microsoftMoneyTransactionDataFi
 // ParseImportedData returns the imported data by parsing the Microsoft Money
 // transaction data
 func (c *microsoftMoneyTransactionDataFileImporter) ParseImportedData(ctx core.Context, user *models.User, data []byte, defaultTimezone *time.Location, additionalOptions converter.TransactionDataImporterOptions, accountMap map[string]*models.Account, expenseCategoryMap map[string]map[string]*models.TransactionCategory, incomeCategoryMap map[string]map[string]*models.TransactionCategory, transferCategoryMap map[string]map[string]*models.TransactionCategory, tagMap map[string]*models.TransactionTag) (models.ImportedTransactionSlice, []*models.Account, []*models.TransactionCategory, []*models.TransactionCategory, []*models.TransactionCategory, []*models.TransactionTag, error) {
-	// A backup (.mbf) is a cabinet wrapping the database, so the engine
+	// A backup (.mbf) is a cabinet wrapping the database, so the extraction
 	// unwraps it and treats the database inside exactly like a selected .mny
 	// file.
-	moneyData, err := engine.ExtractMicrosoftMoneyData(ctx, data)
+	moneyData, err := ExtractMicrosoftMoneyData(ctx, data)
 
 	if err != nil {
 		log.Errorf(ctx, "[microsoft_money_transaction_data_file_importer.ParseImportedData] cannot extract the Microsoft Money data of the file of user \"uid:%d\", because %s", user.Uid, err.Error())

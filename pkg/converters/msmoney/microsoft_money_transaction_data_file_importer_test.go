@@ -4,7 +4,6 @@
 package msmoney
 
 import (
-	"io"
 	"math"
 	"testing"
 	"time"
@@ -348,15 +347,6 @@ func moneyTestDatabase() []byte {
 	return data
 }
 
-func TestIsMicrosoftMoneyDataFile(t *testing.T) {
-	assert.True(t, IsMicrosoftMoneyDataFile(moneyHeader()))
-	assert.False(t, IsMicrosoftMoneyDataFile(append(make([]byte, 4), []byte("Standard Jet DB")...)))
-	assert.False(t, IsMicrosoftMoneyDataFile([]byte("SQLite format 3\x00")))
-	assert.False(t, IsMicrosoftMoneyDataFile([]byte("!Type:Bank\nD01/02/2024\nT-1.00\n^")))
-	assert.False(t, IsMicrosoftMoneyDataFile(nil))
-	assert.False(t, IsMicrosoftMoneyDataFile(moneyHeader()[:18]))
-}
-
 func TestMicrosoftMoneyTransactionDataFileParseImportedData(t *testing.T) {
 	importer := MicrosoftMoneyTransactionDataFileImporter
 	context := core.NewNullContext()
@@ -425,62 +415,6 @@ func TestMicrosoftMoneyTransactionDataFileParseImportedDataRejectsUnknownFormat(
 
 	_, _, _, _, _, _, err = importer.ParseImportedData(context, user, corrupt, time.UTC, converter.DefaultImporterOptions, nil, nil, nil, nil, nil)
 	assert.ErrorIs(t, err, errs.ErrImportMicrosoftMoneyDataFileNotReadable)
-}
-
-// memoryWriteSeeker backs a cabinet written entirely in memory, so the tests do
-// not touch the filesystem.
-type memoryWriteSeeker struct {
-	buffer []byte
-	offset int64
-}
-
-func (w *memoryWriteSeeker) Write(data []byte) (int, error) {
-	end := w.offset + int64(len(data))
-
-	if end > int64(len(w.buffer)) {
-		w.buffer = append(w.buffer, make([]byte, end-int64(len(w.buffer)))...)
-	}
-
-	copy(w.buffer[w.offset:], data)
-	w.offset = end
-
-	return len(data), nil
-}
-
-func (w *memoryWriteSeeker) Seek(offset int64, whence int) (int64, error) {
-	switch whence {
-	case io.SeekStart:
-		w.offset = offset
-	case io.SeekCurrent:
-		w.offset += offset
-	case io.SeekEnd:
-		w.offset = int64(len(w.buffer)) + offset
-	}
-
-	return w.offset, nil
-}
-
-// buildBackupArchive writes a cabinet holding the given members with the given
-// compression, which is what a Microsoft Money backup file is.
-func buildBackupArchive(t *testing.T, compression cabinet.Compression, members map[string][]byte, order []string) []byte {
-	t.Helper()
-
-	writer := &memoryWriteSeeker{}
-	cabinetWriter := cabinet.NewWriter(writer)
-
-	require.NoError(t, cabinetWriter.SetCompression(compression))
-
-	for _, name := range order {
-		fileWriter, err := cabinetWriter.Create(name)
-		require.NoError(t, err)
-
-		_, err = fileWriter.Write(members[name])
-		require.NoError(t, err)
-	}
-
-	require.NoError(t, cabinetWriter.Close())
-
-	return writer.buffer
 }
 
 // TestParseImportedDataAcceptsBackupFile verifies that a .mbf backup imports

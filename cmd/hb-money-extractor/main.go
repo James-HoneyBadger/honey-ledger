@@ -8,6 +8,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -18,7 +19,6 @@ import (
 
 	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/msmoney"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/core"
-	"github.com/James-HoneyBadger/honey-ledger/pkg/errs"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/log"
 )
 
@@ -270,13 +270,17 @@ func isTerminal(file *os.File) bool {
 
 // describeError explains a failure in terms of the file the user picked.
 func describeError(err error) string {
-	switch err.Error() {
-	case errs.ErrImportFileTypeNotSupported.Message:
+	switch {
+	case errors.Is(err, msmoney.ErrFileTypeNotSupported):
 		return "this is not a Microsoft Money data file (.mny) or backup (.mbf)"
-	case errs.ErrImportMicrosoftMoneyDataFileNotReadable.Message:
+	case errors.Is(err, msmoney.ErrDataFileNotReadable):
 		return "the file is damaged, or is not a complete Microsoft Money database"
-	case errs.ErrImportMicrosoftMoneyDataFileEncrypted.Message:
+	case errors.Is(err, msmoney.ErrDataFileEncrypted):
 		return "the file is password protected; remove the password in Microsoft Money and try again"
+	case errors.Is(err, msmoney.ErrBackupFileNotReadable):
+		return "the file is damaged, or is not a complete Microsoft Money backup"
+	case errors.Is(err, msmoney.ErrBackupFileTooLarge):
+		return "the file is too large to extract"
 	}
 
 	return err.Error()

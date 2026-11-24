@@ -3,7 +3,6 @@ module github.com/James-HoneyBadger/honey-ledger
 go 1.26.0
 
 require (
-	github.com/James-HoneyBadger/money-engine v0.0.0
 	github.com/abemedia/go-cabinet v0.3.0
 	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/extrame/xls v0.0.2-0.20200426124601-4a6cf263071b
@@ -99,5 +98,3 @@ require (
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/James-HoneyBadger/money-engine => ../money-engine

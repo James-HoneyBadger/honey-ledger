@@ -8,6 +8,39 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 Releases before 1.4.2 are not catalogued here; see the commit history for
 details.
 
+## [Unreleased]
+
+### Added
+
+- Microsoft Money imports preserve each side of a transfer in its own currency:
+  a cross-currency transfer carries the amount the receiving account got, and
+  falls back to the source amount when the receiving side cannot be matched.
+- Backup restore writes the restored database to a temporary file and only
+  replaces the live database after the bytes are complete and carry a SQLite
+  header, so an interrupted or corrupt restore cannot leave the live database
+  unusable.
+
+### Changed
+
+- The Microsoft Money packages (MSISAM engine, extraction, output writers,
+  synthetic test files) are carried in-repo again, so Honey Ledger builds
+  self-contained. The copy is kept in lockstep with the one HB SunRise carries.
+
+### Fixed
+
+- The MSISAM engine bounds the row count and long values a corrupt file can
+  claim, and the extractor's CSV/XLSX writers neutralize spreadsheet formulas
+  in imported text.
+- The QIF reader fails an import whose lines exceed the supported length
+  instead of silently dropping the rest of the file, and the SGML decoder
+  honors the encoding declared by the document.
+- The National Bank of Romania exchange-rate source points at the bank's new
+  XML address on curs.bnr.ro.
+
+### Security
+
+- The extraction engine no longer trusts the sizes a crafted Microsoft Money
+  file declares for buffers (row counts and chained long values are clamped).
 ## [2.1.1] - 2026-11-23
 
 ### Fixed

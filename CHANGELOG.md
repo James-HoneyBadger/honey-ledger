@@ -8,6 +8,16 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 Releases before 1.4.2 are not catalogued here; see the commit history for
 details.
 
+## [2.1.1] - 2026-11-23
+
+### Fixed
+
+- The HB Money Extractor reported its version as 1.0.0 regardless of the release
+  it shipped with. `scripts/build-money-extractor.sh` now stamps the binary with
+  the version from `package.json` at build time, so its `-version` output and the
+  `source` field of its JSON report the same number as the app it came with. A
+  plain `go build` reports `dev`.
+
 ## [2.1.0] - 2026-11-23
 
 ### Added
@@ -322,6 +332,7 @@ which affect anyone shipping or embedding Honey Ledger.
 
 - Multi-platform application icons for the Linux, macOS, and Windows builds.
 
+[2.1.1]: https://github.com/James-HoneyBadger/honey-ledger/releases/tag/v2.1.1
 [2.0.0]: https://github.com/James-HoneyBadger/honey-ledger/releases/tag/v2.0.0
 [1.5.0]: https://github.com/James-HoneyBadger/honey-ledger/releases/tag/v1.5.0
 [1.4.3]: https://github.com/James-HoneyBadger/honey-ledger/releases/tag/v1.4.3

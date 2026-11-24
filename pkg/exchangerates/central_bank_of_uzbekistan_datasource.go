@@ -151,7 +151,7 @@ func (e *CentralBankOfUzbekistanDataSource) Parse(c core.Context, content []byte
 	err := json.Unmarshal(content, centralBankOfUzbekistanData)
 
 	if err != nil {
-		log.Errorf(c, "[central_bank_of_uzbekistan_datasource.Parse] failed to parse xml data, content is %s, because %s", string(content), err.Error())
+		log.Errorf(c, "[central_bank_of_uzbekistan_datasource.Parse] failed to parse json data, content is %s, because %s", string(content), err.Error())
 		return nil, errs.ErrFailedToRequestRemoteApi
 	}
 

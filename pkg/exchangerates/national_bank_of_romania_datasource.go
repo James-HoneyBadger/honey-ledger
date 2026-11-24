@@ -20,8 +20,11 @@ import (
 	"github.com/James-HoneyBadger/honey-ledger/pkg/validators"
 )
 
-const nationalBankOfRomaniaExchangeRateUrl = "https://www.bnr.ro/nbrfxrates.xml"
-const nationalBankOfRomaniaExchangeRateReferenceUrl = "https://bnro.ro/Exchange-rates-1224.aspx"
+// The National Bank of Romania moved its XML feeds from www.bnr.ro to the
+// dedicated curs.bnr.ro subdomain on 6 August 2026; the old addresses redirect
+// to the website itself and no longer serve XML.
+const nationalBankOfRomaniaExchangeRateUrl = "https://curs.bnr.ro/nbrfxrates.xml"
+const nationalBankOfRomaniaExchangeRateReferenceUrl = "https://www.bnr.ro/23988-cursurile-pietei-valutare-in-format-xml"
 const nationalBankOfRomaniaDataSource = "Banca Naţională a României"
 
 const nationalBankOfRomaniaUpdateDateFormat = "2006-01-02 15"

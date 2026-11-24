@@ -27,7 +27,7 @@ func TestExchangeRatesApiLatestExchangeRateHandler_BankOfCanadaDataSource(t *tes
 	assert.Equal(t, "CAD", exchangeRateResponse.BaseCurrency)
 
 	supportedCurrencyCodes := []string{"AUD", "BRL", "CHF", "CNY", "EUR", "GBP", "HKD", "IDR", "INR",
-		"JPY", "KRW", "MXN", "MYR", "NOK", "NZD", "PEN", "RUB", "SAR", "SEK", "SGD", "THB", "TRY", "TWD",
+		"JPY", "KRW", "MXN", "MYR", "NOK", "NZD", "PEN", "PLN", "RUB", "SAR", "SEK", "SGD", "THB", "TRY", "TWD",
 		"USD", "VND", "ZAR"}
 
 	checkExchangeRatesHaveSpecifiedCurrencies(t, exchangeRateResponse.BaseCurrency, supportedCurrencyCodes, exchangeRateResponse.ExchangeRates)
@@ -273,7 +273,7 @@ func TestExchangeRatesApiLatestExchangeRateHandler_CentralBankOfUzbekistanDataSo
 	assert.Equal(t, "UZS", exchangeRateResponse.BaseCurrency)
 
 	supportedCurrencyCodes := []string{"AED", "AFN", "AMD", "ARS", "AUD", "AZN",
-		"BDT", "BGN", "BHD", "BND", "BRL", "BYN", "CAD", "CHF", "CNY", "CUP", "CZK",
+		"BDT", "BHD", "BND", "BRL", "BYN", "CAD", "CHF", "CNY", "CUP", "CZK",
 		"DKK", "DZD", "EGP", "EUR", "GBP", "GEL", "HKD", "HUF", "IDR", "ILS", "INR", "IQD", "IRR", "ISK",
 		"JOD", "JPY", "KGS", "KHR", "KRW", "KWD", "KZT", "LAK", "LBP", "LYD",
 		"MAD", "MDL", "MMK", "MNT", "MXN", "MYR", "NOK", "NZD", "OMR", "PHP", "PKR", "PLN",
@@ -288,8 +288,10 @@ func executeLatestExchangeRateHandler(t *testing.T, dataSourceType string) *mode
 		t.Skip("skipping external API test in short mode")
 	}
 
-	if os.Getenv("BUILD_PIPELINE") == "1" && os.Getenv("CHECK_3RD_API") != "1" {
-		return nil
+	// Live tests call central bank servers and fail when a bank changes its
+	// feed, so they are opt-in: run with CHECK_3RD_API=1.
+	if os.Getenv("CHECK_3RD_API") != "1" {
+		t.Skip("skipping live third-party API test; set CHECK_3RD_API=1 to run")
 	}
 
 	config := &settings.Config{

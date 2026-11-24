@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -199,5 +200,11 @@ func TestAtomicReplaceFile(t *testing.T) {
 
 	info, err := os.Stat(destPath)
 	assert.Nil(t, err)
-	assert.Equal(t, os.FileMode(0600), info.Mode().Perm(), "restored files keep private permissions")
+
+	if runtime.GOOS != "windows" {
+		// Windows has no POSIX permission bits; the mode it reports carries
+		// only the read-only bit, so the private-permission guarantee is
+		// checked where the bits exist.
+		assert.Equal(t, os.FileMode(0600), info.Mode().Perm(), "restored files keep private permissions")
+	}
 }

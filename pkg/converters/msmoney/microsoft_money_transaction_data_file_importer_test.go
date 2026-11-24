@@ -4,10 +4,12 @@
 package msmoney
 
 import (
+	"io"
 	"math"
 	"testing"
 	"time"
 
+	"github.com/abemedia/go-cabinet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -423,4 +425,86 @@ func TestMicrosoftMoneyTransactionDataFileParseImportedDataRejectsUnknownFormat(
 
 	_, _, _, _, _, _, err = importer.ParseImportedData(context, user, corrupt, time.UTC, converter.DefaultImporterOptions, nil, nil, nil, nil, nil)
 	assert.ErrorIs(t, err, errs.ErrImportMicrosoftMoneyDataFileNotReadable)
+}
+
+// memoryWriteSeeker backs a cabinet written entirely in memory, so the tests do
+// not touch the filesystem.
+type memoryWriteSeeker struct {
+	buffer []byte
+	offset int64
+}
+
+func (w *memoryWriteSeeker) Write(data []byte) (int, error) {
+	end := w.offset + int64(len(data))
+
+	if end > int64(len(w.buffer)) {
+		w.buffer = append(w.buffer, make([]byte, end-int64(len(w.buffer)))...)
+	}
+
+	copy(w.buffer[w.offset:], data)
+	w.offset = end
+
+	return len(data), nil
+}
+
+func (w *memoryWriteSeeker) Seek(offset int64, whence int) (int64, error) {
+	switch whence {
+	case io.SeekStart:
+		w.offset = offset
+	case io.SeekCurrent:
+		w.offset += offset
+	case io.SeekEnd:
+		w.offset = int64(len(w.buffer)) + offset
+	}
+
+	return w.offset, nil
+}
+
+// buildBackupArchive writes a cabinet holding the given members with the given
+// compression, which is what a Microsoft Money backup file is.
+func buildBackupArchive(t *testing.T, compression cabinet.Compression, members map[string][]byte, order []string) []byte {
+	t.Helper()
+
+	writer := &memoryWriteSeeker{}
+	cabinetWriter := cabinet.NewWriter(writer)
+
+	require.NoError(t, cabinetWriter.SetCompression(compression))
+
+	for _, name := range order {
+		fileWriter, err := cabinetWriter.Create(name)
+		require.NoError(t, err)
+
+		_, err = fileWriter.Write(members[name])
+		require.NoError(t, err)
+	}
+
+	require.NoError(t, cabinetWriter.Close())
+
+	return writer.buffer
+}
+
+// TestParseImportedDataAcceptsBackupFile verifies that a .mbf backup imports
+// through the ledger importer exactly like the data file it wraps.
+func TestParseImportedDataAcceptsBackupFile(t *testing.T) {
+	database := moneyTestDatabase()
+
+	archive := buildBackupArchive(t, cabinet.MSZIP, map[string][]byte{
+		"mbf943E.tmp": database,
+	}, []string{"mbf943E.tmp"})
+
+	user := &models.User{
+		Uid:             1234567890,
+		DefaultCurrency: "USD",
+	}
+
+	imported, accounts, expenseCategories, incomeCategories, transferCategories, _, err := MicrosoftMoneyTransactionDataFileImporter.ParseImportedData(
+		core.NewNullContext(), user, archive, time.UTC, converter.DefaultImporterOptions, nil, nil, nil, nil, nil,
+	)
+
+	require.NoError(t, err)
+	require.Len(t, imported, 5)
+	assert.NotEmpty(t, accounts)
+	assert.NotEmpty(t, expenseCategories)
+	assert.NotEmpty(t, incomeCategories)
+	assert.NotEmpty(t, transferCategories)
 }

@@ -4,6 +4,7 @@ go 1.26.0
 
 require (
 	github.com/James-HoneyBadger/money-engine v0.0.0
+	github.com/abemedia/go-cabinet v0.3.0
 	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/extrame/xls v0.0.2-0.20200426124601-4a6cf263071b
 	github.com/gin-contrib/cache v1.4.1
@@ -35,7 +36,6 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.1 // indirect
-	github.com/abemedia/go-cabinet v0.3.0 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/boombuler/barcode v1.1.0 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf // indirect

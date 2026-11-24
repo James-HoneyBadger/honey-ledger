@@ -468,17 +468,29 @@ func (r *qifDataReader) parseClearedStatus(ctx core.Context, value string) qifTr
 	}
 }
 
-func createNewQifDataReader(data []byte) *qifDataReader {
+// createNewQifDataReader returns a reader over the lines of the data, or an
+// error when the data is not valid text or holds a line longer than the reader
+// supports. A line that cannot be scanned must fail the import rather than
+// silently drop the remainder of the file.
+func createNewQifDataReader(data []byte) (*qifDataReader, error) {
 	fallback := unicode.UTF8.NewDecoder()
 	reader := transform.NewReader(bytes.NewReader(data), unicode.BOMOverride(fallback))
 	scanner := bufio.NewScanner(reader)
+
+	const maxLineLength = 1024 * 1024
+	scanner.Buffer(make([]byte, 4096), maxLineLength)
+
 	allLines := make([]string, 0)
 
 	for scanner.Scan() {
 		allLines = append(allLines, scanner.Text())
 	}
 
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
 	return &qifDataReader{
 		allLines: allLines,
-	}
+	}, nil
 }

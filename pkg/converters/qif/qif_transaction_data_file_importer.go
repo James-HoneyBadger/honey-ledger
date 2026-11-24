@@ -8,6 +8,8 @@ import (
 
 	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/converter"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/core"
+	"github.com/James-HoneyBadger/honey-ledger/pkg/errs"
+	"github.com/James-HoneyBadger/honey-ledger/pkg/log"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/models"
 	"github.com/James-HoneyBadger/honey-ledger/pkg/utils"
 )
@@ -41,7 +43,13 @@ var (
 
 // ParseImportedData returns the imported data by parsing the quicken interchange format (qif) transaction data
 func (c *qifTransactionDataImporter) ParseImportedData(ctx core.Context, user *models.User, data []byte, defaultTimezone *time.Location, additionalOptions converter.TransactionDataImporterOptions, accountMap map[string]*models.Account, expenseCategoryMap map[string]map[string]*models.TransactionCategory, incomeCategoryMap map[string]map[string]*models.TransactionCategory, transferCategoryMap map[string]map[string]*models.TransactionCategory, tagMap map[string]*models.TransactionTag) (models.ImportedTransactionSlice, []*models.Account, []*models.TransactionCategory, []*models.TransactionCategory, []*models.TransactionCategory, []*models.TransactionTag, error) {
-	qifDataReader := createNewQifDataReader(data)
+	qifDataReader, err := createNewQifDataReader(data)
+
+	if err != nil {
+		log.Errorf(ctx, "[qif_transaction_data_importer.ParseImportedData] cannot read the QIF data of user \"uid:%d\", because %s", user.Uid, err.Error())
+		return nil, nil, nil, nil, nil, nil, errs.Or(err, errs.ErrInvalidQIFFile)
+	}
+
 	qifData, err := qifDataReader.read(ctx)
 
 	if err != nil {

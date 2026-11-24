@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"sync"
 
+	"golang.org/x/net/html/charset"
+
 	"github.com/James-HoneyBadger/honey-ledger/pkg/errs"
 )
 
@@ -314,9 +316,10 @@ func (d *Decoder) getActualFieldValue(fieldName string, fieldValue string, textu
 // NewDecoder creates a new SGML parser reading from specified io reader
 func NewDecoder(reader io.Reader) *Decoder {
 	xmlDecoder := xml.NewDecoder(reader)
-	xmlDecoder.CharsetReader = func(charset string, input io.Reader) (io.Reader, error) {
-		return input, nil
-	}
+	// Honor the encoding declared by the document instead of assuming UTF-8,
+	// so SGML carrying an ISO-8859-1 or Windows-1252 declaration decodes its
+	// text correctly.
+	xmlDecoder.CharsetReader = charset.NewReaderLabel
 
 	return &Decoder{
 		xmlDecoder: xmlDecoder,

@@ -360,3 +360,27 @@ func TestDecoderDecode_WithEmbeddedNotSupportedField(t *testing.T) {
 
 	assert.EqualError(t, err, errs.ErrInvalidSGMLFile.Message)
 }
+
+func TestDecoderDecode_DeclaredISO88591Charset(t *testing.T) {
+	// "caf\xe9" is "café" in ISO-8859-1.
+	content := "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<Root>\n<Text1>caf\xe9\n</Root>\n"
+	sgmlDecoder := NewDecoder(strings.NewReader(content))
+
+	testStruct := &TestSimpleStruct{}
+	err := sgmlDecoder.Decode(&testStruct)
+
+	assert.Nil(t, err)
+	assert.Equal(t, "café", testStruct.Text1)
+}
+
+func TestDecoderDecode_DeclaredWindows1252Charset(t *testing.T) {
+	// "\x80" is the euro sign in Windows-1252 and is not valid UTF-8.
+	content := "<?xml version=\"1.0\" encoding=\"windows-1252\"?>\n<Root>\n<Text1>EUR \x80\n</Root>\n"
+	sgmlDecoder := NewDecoder(strings.NewReader(content))
+
+	testStruct := &TestSimpleStruct{}
+	err := sgmlDecoder.Decode(&testStruct)
+
+	assert.Nil(t, err)
+	assert.Equal(t, "EUR €", testStruct.Text1)
+}

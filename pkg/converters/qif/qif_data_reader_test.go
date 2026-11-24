@@ -526,3 +526,31 @@ func TestQifDataReaderParse_UnsupportedFieldsOrValues(t *testing.T) {
 	})
 	assert.Nil(t, err)
 }
+
+func TestCreateNewQifDataReader_ReadsLongLines(t *testing.T) {
+	longMemo := make([]byte, 100*1024)
+
+	for i := range longMemo {
+		longMemo[i] = 'a'
+	}
+
+	data := []byte("!Type:Bank\nD2024/10/9\nT-123.45\nM" + string(longMemo) + "\n^\n")
+
+	reader, err := createNewQifDataReader(data)
+	assert.Nil(t, err)
+	assert.Len(t, reader.allLines, 5)
+	assert.Equal(t, "M"+string(longMemo), reader.allLines[3])
+}
+
+func TestCreateNewQifDataReader_RejectsOversizedLine(t *testing.T) {
+	longMemo := make([]byte, 1024*1024+1)
+
+	for i := range longMemo {
+		longMemo[i] = 'a'
+	}
+
+	data := []byte("!Type:Bank\nD2024/10/9\nT-123.45\nM" + string(longMemo) + "\n^\n")
+
+	_, err := createNewQifDataReader(data)
+	assert.Error(t, err, "a line longer than the reader supports must fail instead of silently dropping the rest of the file")
+}

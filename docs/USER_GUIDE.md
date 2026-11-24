@@ -302,7 +302,7 @@ memory, so there is nothing to extract first. The import reads:
 | Accounts | Accounts, with their currencies |
 | Categories | Categories, grouped as Money nests them |
 | Expense and income transactions | Expense and income transactions |
-| Transfers between accounts | Transfers, once per pair of accounts |
+| Transfers between accounts | Transfers, once per pair of accounts, with each side's amount kept in its own account's currency |
 | Transactions with splits | One transaction per split, under the same date and account |
 | Memos | Transaction descriptions |
 

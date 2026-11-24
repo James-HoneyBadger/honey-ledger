@@ -26,10 +26,10 @@ Honey Ledger removes the step instead of documenting it. In the transaction list
 
 | What comes across | Detail |
 |---|---|
-| **Accounts** | with their currencies and account types |
+| **Accounts** | with their currencies (account types are chosen when importing, as Money's account kinds have no exact counterpart in the ledger) |
 | **Categories** | primary and secondary, nested the way Money nests them |
 | **Transactions** | expense and income entries, with memos carried over as descriptions |
-| **Transfers** | one transaction per pair of accounts, not two unrelated rows |
+| **Transfers** | one transaction per pair of accounts, not two unrelated rows, each side's amount preserved in its own currency |
 | **Splits** | one transaction per split, allocated to the right categories |
 | **Backups (`.mbf`)** | Money's backups are Microsoft Cabinet archives around the same database; Honey Ledger unpacks one itself and imports the database inside |
 

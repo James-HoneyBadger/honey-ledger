@@ -299,7 +299,7 @@ func (s *BackupService) RestoreBackup(c core.Context, fileName string) (err erro
 		return fmt.Errorf("failed to close database before restore: %w", closeErr)
 	}
 
-	if err := restoreFileFromZip(databaseFile, config.DatabaseConfig.DatabasePath); err != nil {
+	if err := restoreDatabaseFileFromZip(databaseFile, config.DatabaseConfig.DatabasePath); err != nil {
 		return fmt.Errorf("failed to restore database: %w", err)
 	}
 
@@ -450,10 +450,6 @@ func addDirectoryToZip(zipWriter *zip.Writer, dirPath string, prefixInZip string
 }
 
 func restoreFileFromZip(f *zip.File, destPath string) error {
-	if err := os.MkdirAll(filepath.Dir(destPath), 0750); err != nil {
-		return err
-	}
-
 	rc, err := f.Open()
 
 	if err != nil {
@@ -462,14 +458,104 @@ func restoreFileFromZip(f *zip.File, destPath string) error {
 
 	defer rc.Close()
 
-	destFile, err := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	return atomicReplaceFile(rc, destPath, nil)
+}
+
+// sqliteFileHeader is the magic every SQLite database begins with.
+var sqliteFileHeader = []byte("SQLite format 3\x00")
+
+// restoreDatabaseFileFromZip restores the database file of a backup archive.
+// The bytes are first written to a temporary file in the same directory, which
+// is only moved over the live database after it is complete and carries a
+// SQLite header, so an interrupted or corrupt restore never leaves the live
+// database truncated or unusable.
+func restoreDatabaseFileFromZip(f *zip.File, destPath string) error {
+	rc, err := f.Open()
 
 	if err != nil {
 		return err
 	}
 
-	defer destFile.Close()
+	defer rc.Close()
 
-	_, err = io.Copy(destFile, rc)
-	return err
+	return atomicReplaceFile(rc, destPath, func(file *os.File) error {
+		header := make([]byte, len(sqliteFileHeader))
+
+		if _, err := file.ReadAt(header, 0); err != nil {
+			return fmt.Errorf("cannot read restored database header: %w", err)
+		}
+
+		if !bytes.Equal(header, sqliteFileHeader) {
+			return fmt.Errorf("restored database does not begin with a SQLite header")
+		}
+
+		return nil
+	})
+}
+
+// atomicReplaceFile writes src to a temporary file next to destPath and then
+// moves it into place, so destPath is never left half-written. The current file
+// is kept until the replacement succeeds and is restored if the move fails.
+func atomicReplaceFile(src io.Reader, destPath string, validate func(file *os.File) error) error {
+	if err := os.MkdirAll(filepath.Dir(destPath), 0750); err != nil {
+		return err
+	}
+
+	tempFile, err := os.CreateTemp(filepath.Dir(destPath), ".restore-*")
+
+	if err != nil {
+		return err
+	}
+
+	tempPath := tempFile.Name()
+
+	defer func() {
+		_ = os.Remove(tempPath) // No-op after a successful rename.
+	}()
+
+	if _, err := io.Copy(tempFile, src); err != nil {
+		_ = tempFile.Close()
+		return err
+	}
+
+	if validate != nil {
+		if err := validate(tempFile); err != nil {
+			_ = tempFile.Close()
+			return err
+		}
+	}
+
+	if err := tempFile.Sync(); err != nil {
+		_ = tempFile.Close()
+		return err
+	}
+
+	if err := tempFile.Close(); err != nil {
+		return err
+	}
+
+	// Move the current file out of the way first: os.Rename cannot replace an
+	// existing file on Windows.
+	previousPath := destPath + ".pre-restore-" + filepath.Base(tempPath)
+	renamedPrevious := false
+
+	if err := os.Rename(destPath, previousPath); err == nil {
+		renamedPrevious = true
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	if err := os.Rename(tempPath, destPath); err != nil {
+		if renamedPrevious {
+			_ = os.Rename(previousPath, destPath)
+		}
+
+		return err
+	}
+
+	if renamedPrevious {
+		_ = os.Remove(previousPath)
+	}
+
+	return nil
 }

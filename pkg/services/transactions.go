@@ -166,7 +166,7 @@ func (s *TransactionService) GetAllTransactionsInOneAccountWithAccountBalanceByM
 		} else if transaction.Type == models.TRANSACTION_DB_TYPE_TRANSFER_IN {
 			accumulatedBalance = accumulatedBalance + transaction.Amount
 		} else {
-			log.Errorf(c, "[transactions.GetAllTransactionsInOneAccountWithAccountBalanceByMaxTime] trasaction type (%d) is invalid (id:%d)", transaction.TransactionId, transaction.Type)
+			log.Errorf(c, "[transactions.GetAllTransactionsInOneAccountWithAccountBalanceByMaxTime] transaction type (%d) is invalid (id:%d)", transaction.Type, transaction.TransactionId)
 			return nil, 0, 0, 0, 0, errs.ErrTransactionTypeInvalid
 		}
 
@@ -625,7 +625,7 @@ func (s *TransactionService) BatchCreateTransactions(c core.Context, uid int64, 
 	}
 
 	for index, tagIds := range allTagIds {
-		if index < 0 || index >= len(transactions) {
+		if index >= len(transactions) {
 			return errs.ErrOperationFailed
 		}
 

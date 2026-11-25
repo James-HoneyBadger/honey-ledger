@@ -8,6 +8,15 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 Releases before 1.4.2 are not catalogued here; see the commit history for
 details.
 
+## [Unreleased]
+
+### Changed
+
+- Microsoft Money imports decode payees: a transaction without a memo uses its
+  payee as the description instead of importing without one.
+- Microsoft Money imports carry account closed/hidden flags, split-integrity
+  validation, and a validation summary through the synchronized engine.
+
 ## [2.2.0] - 2026-11-24
 
 ### Added

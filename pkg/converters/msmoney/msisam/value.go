@@ -275,6 +275,14 @@ func (d *Database) Float(field Field) (float64, bool) {
 	}
 }
 
+// Numeric returns the value of a numeric field, which stores a sign byte
+// followed by a little endian magnitude scaled by the column's scale. It is a
+// float64 convenience for inspection; financial code must not treat it as an
+// exact representation.
+func (d *Database) Numeric(field Field) (float64, bool) {
+	return d.numeric(field)
+}
+
 // numeric decodes a numeric field, which stores a sign byte followed by a
 // little endian magnitude that is scaled by the column's scale.
 func (d *Database) numeric(field Field) (float64, bool) {

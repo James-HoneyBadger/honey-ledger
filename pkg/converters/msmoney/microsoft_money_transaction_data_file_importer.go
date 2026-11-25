@@ -36,6 +36,10 @@ func (c *microsoftMoneyTransactionDataFileImporter) ParseImportedData(ctx core.C
 		log.Warnf(ctx, "[microsoft_money_transaction_data_file_importer.ParseImportedData] skipped %d rows of the Microsoft Money data file of user \"uid:%d\", because they are investment activity, a split total, or have no amount, account or date", moneyData.Skipped, user.Uid)
 	}
 
+	if !moneyData.Diagnostics.IsEmpty() {
+		log.Warnf(ctx, "[microsoft_money_transaction_data_file_importer.ParseImportedData] decoding problems in the Microsoft Money data file of user \"uid:%d\": %s", user.Uid, moneyData.Diagnostics.Summary())
+	}
+
 	if len(moneyData.Transactions) < 1 {
 		return nil, nil, nil, nil, nil, nil, errs.ErrNotFoundTransactionDataInFile
 	}

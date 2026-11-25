@@ -4,6 +4,7 @@
 package msisam
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -208,7 +209,7 @@ func TestRealDatabaseTables(t *testing.T) {
 	names := []string{}
 	visited := 0
 
-	err = database.EachRow(accounts.Definition, func(fields []Field) error {
+	err = database.EachRow(context.Background(), accounts.Definition, func(fields []Field) error {
 		visited++
 
 		index := -1
@@ -245,7 +246,7 @@ func TestRealDatabaseTables(t *testing.T) {
 
 	dates := 0
 
-	err = database.EachRow(transactions.Definition, func(fields []Field) error {
+	err = database.EachRow(context.Background(), transactions.Definition, func(fields []Field) error {
 		for position := range fields {
 			if fields[position].Column.Name != "dt" {
 				continue

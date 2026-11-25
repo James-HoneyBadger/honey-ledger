@@ -15,6 +15,7 @@ package msisam
 
 import (
 	"errors"
+	"fmt"
 )
 
 const (
@@ -85,6 +86,10 @@ var (
 	// ErrEncryptedDatabase reports a password protected database, whose pages
 	// are scrambled with a key derived from the password.
 	ErrEncryptedDatabase = errors.New("msisam: database is encrypted")
+	// ErrUnsupportedVersion reports a database whose engine version is not the
+	// Jet 4 layout this package reads, such as Money 2000 and earlier files
+	// with 2048 byte pages.
+	ErrUnsupportedVersion = errors.New("msisam: unsupported database version")
 	// ErrInvalidPage reports a page index outside the file.
 	ErrInvalidPage = errors.New("msisam: page index is outside the file")
 	// ErrNotDefinitionPage reports a page that does not hold a table
@@ -102,10 +107,11 @@ var (
 // Database is not safe for concurrent use, because it records which pages belong
 // to each table the first time it reads one.
 type Database struct {
-	data      []byte
-	header    []byte
-	pageCount int
-	dataPages map[int][]int
+	data        []byte
+	header      []byte
+	pageCount   int
+	dataPages   map[int][]int
+	diagnostics *Diagnostics
 }
 
 // Open validates the database header and returns a reader over the pages.
@@ -116,6 +122,14 @@ func Open(data []byte) (*Database, error) {
 
 	if string(data[magicOffset:magicOffset+len(Magic)]) != Magic {
 		return nil, ErrNotMSISAMDatabase
+	}
+
+	// Only the Jet 4 layout is read. Money 2000 and earlier files keep the
+	// same engine name but use 2048 byte pages and a different version byte;
+	// reading them as Jet 4 would produce garbage, so they are reported
+	// instead.
+	if data[versionOffset] != versionJet4 {
+		return nil, fmt.Errorf("%w: engine version %d", ErrUnsupportedVersion, data[versionOffset])
 	}
 
 	// A database ends with a partial page when Money appended trailing data, so
@@ -199,6 +213,18 @@ func (d *Database) encrypted() bool {
 // PageCount returns the count of whole pages in the database.
 func (d *Database) PageCount() int {
 	return d.pageCount
+}
+
+// SetDiagnostics attaches a diagnostics sink the database reports decoding
+// problems into. Without one, problems are silently skipped, as before the
+// sink existed. Attach it before the first read.
+func (d *Database) SetDiagnostics(diagnostics *Diagnostics) {
+	d.diagnostics = diagnostics
+}
+
+// Diagnostics returns the attached sink, or nil.
+func (d *Database) Diagnostics() *Diagnostics {
+	return d.diagnostics
 }
 
 // IsValidPageIndex returns whether the index addresses a whole page.

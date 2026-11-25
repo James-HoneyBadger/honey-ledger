@@ -52,30 +52,40 @@ func (d *Database) Catalog() ([]CatalogEntry, error) {
 			rowPage, start, size, ok := d.resolveRow(buffer, index)
 
 			if !ok {
+				d.recordCatalogEntry(page, index, "catalog row cannot be resolved")
+
 				continue
 			}
 
 			layout, ok := rowLayoutAt(rowPage, start, size)
 
 			if !ok || layout.variableCount() == 0 {
+				d.recordCatalogEntry(page, index, "catalog row has no readable layout")
+
 				continue
 			}
 
 			objectPage, ok := readU32(rowPage, start+catalogObjectPageOffset)
 
 			if !ok || !d.IsValidPageIndex(int(objectPage)) {
+				d.recordCatalogEntry(page, index, "catalog row names an invalid object page")
+
 				continue
 			}
 
 			begin, end := layout.variables[0], layout.variables[1]
 
 			if begin < 0 || end < begin || end > size {
+				d.recordCatalogEntry(page, index, "catalog row name lies outside the row")
+
 				continue
 			}
 
 			name := decodeText(rowPage[start+begin : start+end])
 
 			if name == "" {
+				d.recordCatalogEntry(page, index, "catalog row has no name")
+
 				continue
 			}
 
@@ -165,6 +175,16 @@ func (d *Database) Table(name string) (*Table, error) {
 	}
 
 	return nil, fmt.Errorf("%w: %s", ErrTableNotFound, name)
+}
+
+// recordCatalogEntry records an unreadable catalog entry in the database's
+// diagnostics, when one is attached.
+func (d *Database) recordCatalogEntry(page, slot int, reason string) {
+	if d.diagnostics == nil {
+		return
+	}
+
+	d.diagnostics.recordCatalogEntry(page, slot, fmt.Errorf("%s", reason))
 }
 
 // derivedTableName returns the name a table's identity column implies. The

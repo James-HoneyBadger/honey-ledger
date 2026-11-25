@@ -299,6 +299,10 @@ func (d *Database) Definitions() ([]*Definition, error) {
 		definition, err := d.Definition(page)
 
 		if err != nil {
+			if d.diagnostics != nil {
+				d.diagnostics.recordDefinition(page, err)
+			}
+
 			continue
 		}
 

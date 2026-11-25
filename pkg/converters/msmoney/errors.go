@@ -18,6 +18,10 @@ var (
 	// ErrDataFileEncrypted reports a database whose key block says it is password protected
 	ErrDataFileEncrypted = errors.New("microsoft money data file is password protected")
 
+	// ErrDataFileUnsupportedVersion reports a database whose engine version is
+	// not the Jet 4 layout this package reads, such as Money 2000 and earlier.
+	ErrDataFileUnsupportedVersion = errors.New("microsoft money data file uses an unsupported version")
+
 	// ErrBackupFileNotReadable reports a backup that cannot be read
 	ErrBackupFileNotReadable = errors.New("microsoft money backup file cannot be read")
 

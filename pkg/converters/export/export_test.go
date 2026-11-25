@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/xuri/excelize/v2"
 
 	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/msmoney"
@@ -204,4 +205,24 @@ func TestXLSXStripsInvalidCharacters(t *testing.T) {
 	accounts, err := file.GetRows("Accounts")
 	assert.NoError(t, err)
 	assert.Equal(t, "BadName", accounts[1][0])
+}
+
+func TestRegistryListsEveryWriter(t *testing.T) {
+	formats := Formats()
+	require.Len(t, formats, 6)
+
+	keys := make([]string, 0, len(formats))
+
+	for _, format := range formats {
+		keys = append(keys, format.Key)
+	}
+
+	assert.Equal(t, []string{"csv", "honeyledger", "json", "qif", "tsv", "xlsx"}, keys)
+
+	var out bytes.Buffer
+	require.NoError(t, Write("honeyledger", &out, "test", sampleData()))
+	assert.Contains(t, out.String(), "Sub Category")
+
+	err := Write("pdf", &out, "test", sampleData())
+	assert.Error(t, err)
 }

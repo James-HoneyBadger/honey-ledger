@@ -25,6 +25,11 @@ func mappedExtractionError(err error) *errs.Error {
 		return errs.ErrImportFileTypeNotSupported
 	case errors.Is(err, ErrDataFileEncrypted):
 		return errs.ErrImportMicrosoftMoneyDataFileEncrypted
+	case errors.Is(err, ErrDataFileUnsupportedVersion):
+		// The ledger has no dedicated constant for an unsupported engine
+		// version, so it reports the file as not readable, with the reason in
+		// the log line.
+		return errs.ErrImportMicrosoftMoneyDataFileNotReadable
 	case errors.Is(err, ErrBackupFileNotReadable):
 		return errs.ErrImportMicrosoftMoneyBackupFileNotReadable
 	case errors.Is(err, ErrBackupFileTooLarge):

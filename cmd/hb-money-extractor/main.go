@@ -277,6 +277,8 @@ func describeError(err error) string {
 		return "the file is damaged, or is not a complete Microsoft Money database"
 	case errors.Is(err, msmoney.ErrDataFileEncrypted):
 		return "the file is password protected; remove the password in Microsoft Money and try again"
+	case errors.Is(err, msmoney.ErrDataFileUnsupportedVersion):
+		return "the file was written by Microsoft Money 2000 or earlier, whose layout is not supported; export it with a newer Money first"
 	case errors.Is(err, msmoney.ErrBackupFileNotReadable):
 		return "the file is damaged, or is not a complete Microsoft Money backup"
 	case errors.Is(err, msmoney.ErrBackupFileTooLarge):

@@ -52,11 +52,67 @@ type ExtractedData struct {
 	// Skipped counts the rows that cannot be exported: investment activity,
 	// split totals and rows without an amount, account or date.
 	Skipped int
+	// Diagnostics reports the decoding problems found while reading the file:
+	// rows, definitions and catalog entries that could not be decoded. An
+	// empty report means everything that was found decoded cleanly.
+	Diagnostics ExtractedDiagnostics
+}
+
+// ExtractedDiagnostics summarizes the decoding problems found while reading a
+// file. Counts are authoritative; Samples is a bounded selection of the first
+// problems found, for humans.
+type ExtractedDiagnostics struct {
+	CorruptRows           int
+	UnresolvedRows        int
+	CorruptDefinitions    int
+	UnknownCatalogEntries int
+	Samples               []string
+}
+
+// IsEmpty reports whether no decoding problem was found.
+func (d ExtractedDiagnostics) IsEmpty() bool {
+	return d.CorruptRows == 0 && d.UnresolvedRows == 0 && d.CorruptDefinitions == 0 && d.UnknownCatalogEntries == 0
+}
+
+// Summary returns a one line human-readable description of the decoding
+// problems, or an empty string when none were found.
+func (d ExtractedDiagnostics) Summary() string {
+	if d.IsEmpty() {
+		return ""
+	}
+
+	return fmt.Sprintf("%d rows undecodable, %d rows unresolved, %d definitions undecodable, %d catalog entries unreadable",
+		d.CorruptRows, d.UnresolvedRows, d.CorruptDefinitions, d.UnknownCatalogEntries)
+}
+
+// Progress describes one step of an extraction, for a progress display.
+type Progress struct {
+	// Phase names the step: opening, reading tables, transactions, flattening.
+	Phase string
+	// Done is how many units of the step are complete, and Total how many
+	// there are; both are zero for steps that do not count units.
+	Done  int
+	Total int
+}
+
+// ExtractionOptions configures an extraction. The zero value extracts without
+// progress reporting; cancellation is always honoured through the context.
+type ExtractionOptions struct {
+	// Progress, when set, is called as the extraction advances. The calls come
+	// from the goroutine that runs the extraction.
+	Progress func(progress Progress)
 }
 
 // ExtractMicrosoftMoneyData reads a Microsoft Money data file (.mny) or backup
 // (.mbf) and returns its accounts and transactions without needing a ledger.
 func ExtractMicrosoftMoneyData(ctx Context, data []byte) (*ExtractedData, error) {
+	return ExtractMicrosoftMoneyDataWithOptions(ctx, data, ExtractionOptions{})
+}
+
+// ExtractMicrosoftMoneyDataWithOptions reads a Microsoft Money data file or
+// backup like ExtractMicrosoftMoneyData, reporting progress and honouring
+// cancellation through the context.
+func ExtractMicrosoftMoneyDataWithOptions(ctx Context, data []byte, options ExtractionOptions) (*ExtractedData, error) {
 	if IsMicrosoftMoneyBackupFile(data) {
 		database, err := extractMicrosoftMoneyDatabaseFromBackup(ctx, data)
 
@@ -71,7 +127,7 @@ func ExtractMicrosoftMoneyData(ctx Context, data []byte) (*ExtractedData, error)
 		return nil, ErrFileTypeNotSupported
 	}
 
-	moneyData, err := readMicrosoftMoneyData(ctx, data)
+	moneyData, err := readMicrosoftMoneyData(ctx, data, options)
 
 	if err != nil {
 		return nil, err
@@ -81,6 +137,7 @@ func ExtractMicrosoftMoneyData(ctx Context, data []byte) (*ExtractedData, error)
 		Accounts:     make([]ExtractedAccount, 0, len(moneyData.Accounts)),
 		Transactions: make([]ExtractedTransaction, 0, len(moneyData.Transactions)),
 		Skipped:      moneyData.Skipped,
+		Diagnostics:  moneyData.Diagnostics,
 	}
 
 	for _, account := range moneyData.Accounts {

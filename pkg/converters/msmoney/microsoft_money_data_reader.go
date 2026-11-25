@@ -87,11 +87,16 @@ type microsoftMoneyData struct {
 	// Skipped counts the rows the file holds that cannot become a transaction,
 	// such as investment activity, which has no counterpart in the ledger.
 	Skipped int
+	// Diagnostics reports the decoding problems found while reading the file.
+	Diagnostics ExtractedDiagnostics
 }
 
 // readMicrosoftMoneyData reads the accounts, categories and transactions a
-// Microsoft Money data file holds.
-func readMicrosoftMoneyData(ctx Context, data []byte) (*microsoftMoneyData, error) {
+// Microsoft Money data file holds, reporting progress through the options and
+// decoding problems into the returned data's diagnostics.
+func readMicrosoftMoneyData(ctx Context, data []byte, options ExtractionOptions) (*microsoftMoneyData, error) {
+	reportProgress(options, "opening", 0, 0)
+
 	database, err := msisam.Open(data)
 
 	if err != nil {
@@ -99,41 +104,52 @@ func readMicrosoftMoneyData(ctx Context, data []byte) (*microsoftMoneyData, erro
 
 		if errors.Is(err, msisam.ErrEncryptedDatabase) {
 			unreadable = ErrDataFileEncrypted
+		} else if errors.Is(err, msisam.ErrUnsupportedVersion) {
+			unreadable = ErrDataFileUnsupportedVersion
 		}
 
 		errorf(ctx, "[microsoft_money_data_reader.readMicrosoftMoneyData] cannot open the Microsoft Money data file, because %s", err.Error())
 		return nil, fmt.Errorf("%w: %v", unreadable, err)
 	}
 
-	currencies, err := readMicrosoftMoneyCurrencies(database)
+	// Decoding problems are recorded so a damaged file never loses rows
+	// silently; the report travels with the extracted data.
+	diagnostics := &msisam.Diagnostics{}
+	database.SetDiagnostics(diagnostics)
+
+	reportProgress(options, "reading tables", 0, 0)
+
+	currencies, err := readMicrosoftMoneyCurrencies(ctx, database)
 
 	if err != nil {
 		return nil, err
 	}
 
-	accounts, err := readMicrosoftMoneyAccounts(database, currencies)
+	accounts, err := readMicrosoftMoneyAccounts(ctx, database, currencies)
 
 	if err != nil {
 		return nil, err
 	}
 
-	categories, err := readMicrosoftMoneyCategories(database)
+	categories, err := readMicrosoftMoneyCategories(ctx, database)
 
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := readMicrosoftMoneyTransactionRows(database)
+	rows, err := readMicrosoftMoneyTransactionRows(ctx, database, options)
 
 	if err != nil {
 		return nil, err
 	}
 
-	parents, children, err := readMicrosoftMoneySplitHandles(database)
+	parents, children, err := readMicrosoftMoneySplitHandles(ctx, database)
 
 	if err != nil {
 		return nil, err
 	}
+
+	reportProgress(options, "flattening", 0, 0)
 
 	transactions, skipped := flattenMicrosoftMoneyTransactions(rows, parents, children, accounts, categories)
 
@@ -145,7 +161,45 @@ func readMicrosoftMoneyData(ctx Context, data []byte) (*microsoftMoneyData, erro
 
 	sort.Slice(allAccounts, func(i, j int) bool { return allAccounts[i].Name < allAccounts[j].Name })
 
-	return &microsoftMoneyData{Accounts: allAccounts, Transactions: transactions, Skipped: skipped}, nil
+	return &microsoftMoneyData{
+		Accounts:     allAccounts,
+		Transactions: transactions,
+		Skipped:      skipped,
+		Diagnostics:  extractedDiagnostics(diagnostics),
+	}, nil
+}
+
+// reportProgress calls the options' progress callback when one is set.
+func reportProgress(options ExtractionOptions, phase string, done, total int) {
+	if options.Progress != nil {
+		options.Progress(Progress{Phase: phase, Done: done, Total: total})
+	}
+}
+
+// extractedDiagnostics converts the engine's decoding diagnostics into the
+// public report that travels with the extracted data.
+func extractedDiagnostics(diagnostics *msisam.Diagnostics) ExtractedDiagnostics {
+	if diagnostics == nil || diagnostics.IsEmpty() {
+		return ExtractedDiagnostics{}
+	}
+
+	result := ExtractedDiagnostics{
+		CorruptRows:           diagnostics.CorruptRows,
+		UnresolvedRows:        diagnostics.UnresolvedRows,
+		CorruptDefinitions:    diagnostics.CorruptDefinitions,
+		UnknownCatalogEntries: diagnostics.UnknownCatalogEntries,
+		Samples:               make([]string, 0, len(diagnostics.RowSamples)+len(diagnostics.DefinitionSamples)),
+	}
+
+	for _, sample := range diagnostics.RowSamples {
+		result.Samples = append(result.Samples, fmt.Sprintf("row (definition page %d, page %d, slot %d): %s", sample.Definition, sample.Page, sample.Slot, sample.Err))
+	}
+
+	for _, sample := range diagnostics.DefinitionSamples {
+		result.Samples = append(result.Samples, fmt.Sprintf("definition (page %d): %s", sample.Page, sample.Err))
+	}
+
+	return result
 }
 
 // openMicrosoftMoneyTable returns the named table of the data file, reporting a
@@ -164,7 +218,7 @@ func openMicrosoftMoneyTable(ctx Context, database *msisam.Database, name string
 // readMicrosoftMoneyCurrencies returns the ISO code of every currency, keyed by
 // the handle the data file gives it. A currency the ledger does not know, or one
 // without an ISO code, maps to an empty string.
-func readMicrosoftMoneyCurrencies(database *msisam.Database) (map[int64]string, error) {
+func readMicrosoftMoneyCurrencies(ctx Context, database *msisam.Database) (map[int64]string, error) {
 	table, err := database.Table("CRNC")
 
 	if err != nil {
@@ -175,7 +229,7 @@ func readMicrosoftMoneyCurrencies(database *msisam.Database) (map[int64]string, 
 
 	currencies := make(map[int64]string, table.Definition.RowCount)
 
-	err = database.EachRow(table.Definition, func(fields []msisam.Field) error {
+	err = database.EachRow(ctx, table.Definition, func(fields []msisam.Field) error {
 		var handle int64
 		code := ""
 
@@ -210,7 +264,7 @@ func readMicrosoftMoneyCurrencies(database *msisam.Database) (map[int64]string, 
 
 // readMicrosoftMoneyAccounts returns the accounts of the data file, keyed by
 // their handle.
-func readMicrosoftMoneyAccounts(database *msisam.Database, currencies map[int64]string) (map[int64]*microsoftMoneyAccount, error) {
+func readMicrosoftMoneyAccounts(ctx Context, database *msisam.Database, currencies map[int64]string) (map[int64]*microsoftMoneyAccount, error) {
 	table, err := database.Table("ACCT")
 
 	if err != nil {
@@ -219,7 +273,7 @@ func readMicrosoftMoneyAccounts(database *msisam.Database, currencies map[int64]
 
 	accounts := make(map[int64]*microsoftMoneyAccount, table.Definition.RowCount)
 
-	err = database.EachRow(table.Definition, func(fields []msisam.Field) error {
+	err = database.EachRow(ctx, table.Definition, func(fields []msisam.Field) error {
 		var handle, currency int64
 		name := ""
 
@@ -258,7 +312,7 @@ func readMicrosoftMoneyAccounts(database *msisam.Database, currencies map[int64]
 
 // readMicrosoftMoneyCategories returns the categories of the data file, keyed by
 // their handle, with the grouping the ledger files them under.
-func readMicrosoftMoneyCategories(database *msisam.Database) (map[int64]*microsoftMoneyCategory, error) {
+func readMicrosoftMoneyCategories(ctx Context, database *msisam.Database) (map[int64]*microsoftMoneyCategory, error) {
 	table, err := database.Table("CAT")
 
 	if err != nil {
@@ -268,7 +322,7 @@ func readMicrosoftMoneyCategories(database *msisam.Database) (map[int64]*microso
 	names := make(map[int64]string, table.Definition.RowCount)
 	parentHandles := make(map[int64]int64, table.Definition.RowCount)
 
-	err = database.EachRow(table.Definition, func(fields []msisam.Field) error {
+	err = database.EachRow(ctx, table.Definition, func(fields []msisam.Field) error {
 		var handle, parent int64
 		name := ""
 
@@ -328,7 +382,7 @@ func readMicrosoftMoneyCategories(database *msisam.Database) (map[int64]*microso
 
 // readMicrosoftMoneyTransactionRows returns every transaction row of the data
 // file, in storage order.
-func readMicrosoftMoneyTransactionRows(database *msisam.Database) ([]*microsoftMoneyTransactionRow, error) {
+func readMicrosoftMoneyTransactionRows(ctx Context, database *msisam.Database, options ExtractionOptions) ([]*microsoftMoneyTransactionRow, error) {
 	table, err := database.Table("TRN")
 
 	if err != nil {
@@ -336,8 +390,9 @@ func readMicrosoftMoneyTransactionRows(database *msisam.Database) ([]*microsoftM
 	}
 
 	rows := make([]*microsoftMoneyTransactionRow, 0, table.Definition.RowCount)
+	decoded := 0
 
-	err = database.EachRow(table.Definition, func(fields []msisam.Field) error {
+	err = database.EachRow(ctx, table.Definition, func(fields []msisam.Field) error {
 		row := &microsoftMoneyTransactionRow{}
 
 		for _, field := range fields {
@@ -371,6 +426,9 @@ func readMicrosoftMoneyTransactionRows(database *msisam.Database) ([]*microsoftM
 			rows = append(rows, row)
 		}
 
+		decoded++
+		reportProgress(options, "transactions", decoded, table.Definition.RowCount)
+
 		return nil
 	})
 
@@ -385,7 +443,7 @@ func readMicrosoftMoneyTransactionRows(database *msisam.Database) ([]*microsoftM
 // hold splits, as two maps. Money stores a transaction with splits as a parent
 // row that holds the total and one row per split, and only the splits belong in
 // the ledger. Parents map a parent handle; children map a split row handle.
-func readMicrosoftMoneySplitHandles(database *msisam.Database) (parents map[int64]bool, children map[int64]bool, err error) {
+func readMicrosoftMoneySplitHandles(ctx Context, database *msisam.Database) (parents map[int64]bool, children map[int64]bool, err error) {
 	parents = make(map[int64]bool)
 	children = make(map[int64]bool)
 
@@ -396,7 +454,7 @@ func readMicrosoftMoneySplitHandles(database *msisam.Database) (parents map[int6
 		return parents, children, nil
 	}
 
-	err = database.EachRow(table.Definition, func(fields []msisam.Field) error {
+	err = database.EachRow(ctx, table.Definition, func(fields []msisam.Field) error {
 		for _, field := range fields {
 			switch field.Column.Name {
 			case "htrnParent":

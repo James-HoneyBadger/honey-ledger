@@ -10,6 +10,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/msmoney/synthetic"
 )
 
 // engineMoneyHeader returns the first page of a database that has no password.
@@ -177,7 +179,7 @@ func TestRealDatabaseExtract(t *testing.T) {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 
-	moneyData, err := readMicrosoftMoneyData(newTestContext(), data)
+	moneyData, err := readMicrosoftMoneyData(newTestContext(), data, ExtractionOptions{})
 	require.NoError(t, err)
 	require.NotEmpty(t, moneyData.Transactions)
 
@@ -210,4 +212,60 @@ func TestRealDatabaseExtract(t *testing.T) {
 	assert.Greater(t, types[transactionTypeIncome], 100)
 	assert.Greater(t, types[transactionTypeTransfer], 100)
 	assert.Greater(t, moneyData.Skipped, 0)
+}
+
+func TestExtractReportsProgress(t *testing.T) {
+	data := synthetic.MoneyFile()
+
+	var phases []string
+	last := Progress{}
+
+	err := func() error {
+		_, err := ExtractMicrosoftMoneyDataWithOptions(newTestContext(), data, ExtractionOptions{
+			Progress: func(progress Progress) {
+				phases = append(phases, progress.Phase)
+				last = progress
+			},
+		})
+
+		return err
+	}()
+
+	require.NoError(t, err)
+	assert.Contains(t, phases, "opening")
+	assert.Contains(t, phases, "reading tables")
+	assert.Contains(t, phases, "transactions")
+	assert.Contains(t, phases, "flattening")
+	assert.Equal(t, "flattening", last.Phase, "the final progress report names the last step")
+}
+
+func TestExtractSurfacesDiagnostics(t *testing.T) {
+	// A corrupt transaction page row makes the engine record an unresolved row,
+	// which must surface in the extracted data instead of being silent.
+	data := corruptTransactionFile()
+
+	extracted, err := ExtractMicrosoftMoneyData(newTestContext(), data)
+	require.NoError(t, err)
+	assert.False(t, extracted.Diagnostics.IsEmpty(), "a damaged row must be reported")
+	// The slot table is shared between a row's start and the previous row's
+	// end, so corrupting one entry breaks the two rows that touch it.
+	assert.Equal(t, 2, extracted.Diagnostics.UnresolvedRows)
+	assert.NotEmpty(t, extracted.Diagnostics.Summary())
+}
+
+// corruptTransactionFile returns the synthetic database with one transaction
+// row slot pointing outside its page, so the row cannot be resolved.
+func corruptTransactionFile() []byte {
+	data := synthetic.MoneyFile()
+
+	// The synthetic layout puts TRN data on page 9; its first slot table entry
+	// sits at offset 0x0E (msisam.rowStartTable). Pointing it past the page end
+	// makes the row unresolvable while keeping everything else intact.
+	const trnDataPage = 9
+	const firstSlot = trnDataPage*4096 + 0x0E
+
+	data[firstSlot] = 0x00
+	data[firstSlot+1] = 0x30
+
+	return data
 }

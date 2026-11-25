@@ -3,6 +3,10 @@
 
 package msisam
 
+import (
+	"context"
+)
+
 // rowLayout describes the parts of a row that are shared by all of its columns.
 type rowLayout struct {
 	columnCount int
@@ -129,9 +133,11 @@ func (d *Database) crackRow(definition *Definition, page []byte, start, size int
 
 // EachRow calls visit once for every live row of the table, in storage order.
 // Rows the engine has deleted or left as pointers to a relocated row are
-// resolved or skipped, and rows that do not decode are skipped. The fields
-// passed to visit alias the database buffer and must not be modified.
-func (d *Database) EachRow(definition *Definition, visit func(fields []Field) error) error {
+// resolved or skipped, and rows that do not decode are skipped and recorded in
+// the database's diagnostics when one is attached. The context is checked
+// between rows, so a cancelled context stops the walk with its error. The
+// fields passed to visit alias the database buffer and must not be modified.
+func (d *Database) EachRow(ctx context.Context, definition *Definition, visit func(fields []Field) error) error {
 	if definition == nil || definition.Page <= 0 {
 		return ErrCorruptDefinition
 	}
@@ -145,15 +151,35 @@ func (d *Database) EachRow(definition *Definition, visit func(fields []Field) er
 		}
 
 		for index := 0; index < count; index++ {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+
+			// A deleted row is part of normal database operation and is not a
+			// decoding problem, so it is skipped without a diagnostic.
+			flags, _ := readU16(buffer, rowStartTable+index*2)
+
+			if flags&rowDeletedFlag != 0 {
+				continue
+			}
+
 			rowPage, start, size, ok := d.resolveRow(buffer, index)
 
 			if !ok {
+				if d.diagnostics != nil {
+					d.diagnostics.recordUnresolvedRow(definition.Page, page, index)
+				}
+
 				continue
 			}
 
 			fields, err := d.crackRow(definition, rowPage, start, size)
 
 			if err != nil {
+				if d.diagnostics != nil {
+					d.diagnostics.recordRow(definition.Page, page, index, err)
+				}
+
 				continue
 			}
 

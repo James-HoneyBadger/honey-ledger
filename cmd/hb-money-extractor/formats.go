@@ -24,13 +24,32 @@ type outputFormat struct {
 	write       func(w io.Writer, data *msmoney.ExtractedData) error
 }
 
-var allFormats = []outputFormat{
-	{"csv", "CSV", ".csv", "Spreadsheet-friendly, opens in Excel (comma-separated, UTF-8)", writeCSV},
-	{"honeyledger", "Honey Ledger CSV", ".honeyledger.csv", "Ready to import into Honey Ledger", writeHoneyLedgerCSV},
-	{"tsv", "TSV", ".tsv", "Tab-separated values", writeTSV},
-	{"xlsx", "Excel workbook", ".xlsx", "Transactions and Accounts sheets", writeXLSX},
-	{"json", "JSON", ".json", "Accounts and transactions as structured data", writeJSON},
-	{"qif", "QIF", ".qif", "Quicken Interchange Format, for Quicken and most finance apps", writeQIF},
+// allFormats is built from the export package's registry, so the menu and the
+// writers can never diverge.
+var allFormats = buildAllFormats()
+
+func buildAllFormats() []outputFormat {
+	registry := export.Formats()
+	formats := make([]outputFormat, 0, len(registry))
+
+	for _, format := range registry {
+		formats = append(formats, outputFormat{
+			key:         format.Key,
+			name:        format.Name,
+			extension:   format.Extension,
+			description: format.Description,
+			write:       formatWriter(format.Key),
+		})
+	}
+
+	return formats
+}
+
+// formatWriter returns the writer for one registry key.
+func formatWriter(key string) func(w io.Writer, data *msmoney.ExtractedData) error {
+	return func(w io.Writer, data *msmoney.ExtractedData) error {
+		return export.Write(key, w, appName+" "+version, data)
+	}
 }
 
 func formatKeys() string {

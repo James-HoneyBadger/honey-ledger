@@ -5,6 +5,7 @@ package msisam
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -249,7 +250,7 @@ func TestEachRow(t *testing.T) {
 
 	values := []string{}
 
-	err = database.EachRow(definition, func(fields []Field) error {
+	err = database.EachRow(context.Background(), definition, func(fields []Field) error {
 		require.Len(t, fields, 2)
 
 		amount, err := database.Value(fields[0])
@@ -287,7 +288,7 @@ func TestEachRowSkipsDeletedRows(t *testing.T) {
 
 	visited := 0
 
-	err = database.EachRow(definition, func([]Field) error {
+	err = database.EachRow(context.Background(), definition, func([]Field) error {
 		visited++
 
 		return nil
@@ -320,7 +321,7 @@ func TestEachRowFollowsRelocatedRows(t *testing.T) {
 
 	var amounts []int64
 
-	err = database.EachRow(definition, func(fields []Field) error {
+	err = database.EachRow(context.Background(), definition, func(fields []Field) error {
 		amount, ok := database.Int(fields[0])
 		require.True(t, ok)
 
@@ -473,7 +474,7 @@ func TestOpenNeverPanicsOnMalformedInput(t *testing.T) {
 			}
 
 			for _, table := range tables {
-				_ = database.EachRow(table.Definition, func([]Field) error { return nil })
+				_ = database.EachRow(context.Background(), table.Definition, func([]Field) error { return nil })
 			}
 		})
 	}
@@ -503,7 +504,7 @@ func FuzzOpen(f *testing.F) {
 		}
 
 		for _, table := range tables {
-			_ = database.EachRow(table.Definition, func([]Field) error { return nil })
+			_ = database.EachRow(context.Background(), table.Definition, func([]Field) error { return nil })
 		}
 	})
 }
@@ -571,4 +572,108 @@ func TestTablesReportAmbiguousNames(t *testing.T) {
 
 	names := []string{tables[0].Name, tables[1].Name}
 	assert.ElementsMatch(t, []string{"UNKNOWN_1", "UNKNOWN_2"}, names)
+}
+
+func TestOpenRejectsUnsupportedVersion(t *testing.T) {
+	data := buildDatabase(PageTypeData)
+	data[versionOffset] = 0 // Money 2000 and earlier layout
+
+	_, err := Open(data)
+	assert.ErrorIs(t, err, ErrUnsupportedVersion)
+
+	_, err = Open(buildDatabase(PageTypeData))
+	require.NoError(t, err)
+}
+
+func TestEachRowStopsOnCancelledContext(t *testing.T) {
+	pages := definitionPages(2, 3, []testColumn{
+		{name: "id", kind: ColumnTypeLongInt, fixed: true, offset: 0, size: 4},
+	})
+
+	row := make([]byte, 4)
+	putU32(row, 0, 1)
+
+	pages = append(pages, buildDataPage(1, [][]byte{packRow(1, []byte{0x01}, row, nil), packRow(1, []byte{0x01}, row, nil)}))
+
+	database, err := Open(buildDatabaseFromPages(pages...))
+	require.NoError(t, err)
+
+	definition, err := database.Definition(1)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	visited := 0
+	err = database.EachRow(ctx, definition, func([]Field) error {
+		visited++
+
+		return nil
+	})
+
+	assert.ErrorIs(t, err, context.Canceled)
+	assert.Equal(t, 0, visited, "a cancelled context must stop before the first row")
+}
+
+func TestDiagnosticsRecordsDecodingProblems(t *testing.T) {
+	pages := definitionPages(2, 1, []testColumn{
+		{name: "id", kind: ColumnTypeLongInt, fixed: true, offset: 0, size: 4},
+	})
+
+	// One valid data page and one whose slot table points past the end of the
+	// page, so its single row cannot be resolved.
+	row := make([]byte, 4)
+	putU32(row, 0, 7)
+	pages = append(pages, buildDataPage(1, [][]byte{packRow(1, []byte{0x01}, row, nil)}))
+
+	corrupt := make([]byte, PageSize)
+	corrupt[0] = PageTypeData
+	putU32(corrupt, pageLinkOffset, 1)
+	putU16(corrupt, rowCountOffset, 1)
+	putU16(corrupt, rowStartTable, 0x3000)
+	pages = append(pages, corrupt)
+
+	database, err := Open(buildDatabaseFromPages(pages...))
+	require.NoError(t, err)
+
+	definition, err := database.Definition(1)
+	require.NoError(t, err)
+
+	diagnostics := &Diagnostics{}
+	database.SetDiagnostics(diagnostics)
+
+	visited := 0
+	require.NoError(t, database.EachRow(context.Background(), definition, func([]Field) error {
+		visited++
+
+		return nil
+	}))
+
+	assert.Equal(t, 1, visited, "the valid row must still be visited")
+	assert.Equal(t, 1, diagnostics.UnresolvedRows)
+	assert.Len(t, diagnostics.RowSamples, 1)
+	assert.Equal(t, "row slot cannot be resolved", diagnostics.RowSamples[0].Err)
+	assert.NotEmpty(t, diagnostics.Summary())
+}
+
+func TestDiagnosticsStaysSilentWithoutSink(t *testing.T) {
+	pages := definitionPages(1, 1, []testColumn{
+		{name: "id", kind: ColumnTypeLongInt, fixed: true, offset: 0, size: 4},
+	})
+
+	corrupt := make([]byte, PageSize)
+	corrupt[0] = PageTypeData
+	putU32(corrupt, pageLinkOffset, 1)
+	putU16(corrupt, rowCountOffset, 1)
+	putU16(corrupt, rowStartTable, 0x3000)
+	pages = append(pages, corrupt)
+
+	database, err := Open(buildDatabaseFromPages(pages...))
+	require.NoError(t, err)
+
+	definition, err := database.Definition(1)
+	require.NoError(t, err)
+
+	require.NoError(t, database.EachRow(context.Background(), definition, func([]Field) error { return nil }))
+	assert.Nil(t, database.Diagnostics())
 }

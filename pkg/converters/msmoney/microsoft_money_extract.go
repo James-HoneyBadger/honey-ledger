@@ -30,11 +30,14 @@ type ExtractedAccount struct {
 // is in hundredths of the currency and is always positive; Type tells whether
 // the money came in, went out or moved to TransferAccount.
 type ExtractedTransaction struct {
-	Time             time.Time
-	Type             string
-	Account          string
-	Currency         string
-	Amount           int64
+	Time     time.Time
+	Type     string
+	Account  string
+	Currency string
+	Amount   int64
+	// Split marks a transaction that came from one fragment of a split
+	// transaction, preserving its provenance.
+	Split            bool
 	TransferAccount  string
 	TransferCurrency string
 	// TransferAmount is the amount the transfer account received, in its own
@@ -150,6 +153,7 @@ func ExtractMicrosoftMoneyDataWithOptions(ctx Context, data []byte, options Extr
 			Account:     transaction.Account.Name,
 			Currency:    transaction.Account.Currency,
 			Amount:      transaction.Amount,
+			Split:       transaction.Split,
 			Category:    transaction.Category,
 			SubCategory: transaction.SubCategory,
 			Memo:        transaction.Description,

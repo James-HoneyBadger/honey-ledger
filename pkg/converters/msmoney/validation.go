@@ -35,6 +35,12 @@ const (
 	// FindingAccountWithoutTransactions marks an account the file holds that
 	// has no transactions after extraction.
 	FindingAccountWithoutTransactions FindingKind = "account_without_transactions"
+	// FindingOrphanTransferAccount marks a transfer whose receiving account is
+	// not among the file's accounts.
+	FindingOrphanTransferAccount FindingKind = "orphan_transfer_account"
+	// FindingTransferAmountMismatch marks a transfer between two accounts of
+	// the same currency whose sides carry different amounts.
+	FindingTransferAmountMismatch FindingKind = "transfer_amount_mismatch"
 )
 
 // Finding is one observation of the validation report. Severity distinguishes
@@ -154,6 +160,44 @@ func ValidateTransactions(data *ExtractedData) ValidationReport {
 				Time:            transaction.Time,
 				Amount:          transaction.Amount,
 				Message:         "the receiving side of the transfer could not be matched, so the source amount is used for both sides",
+			})
+		}
+	}
+
+	known := make(map[string]string, len(data.Accounts))
+
+	for _, account := range data.Accounts {
+		known[account.Name] = account.Currency
+	}
+
+	for _, transaction := range data.Transactions {
+		if transaction.Type != ExtractedTypeTransfer {
+			continue
+		}
+
+		currency, exists := known[transaction.TransferAccount]
+
+		if !exists {
+			report.Findings = append(report.Findings, Finding{
+				Severity:        SeverityConfirmed,
+				Kind:            FindingOrphanTransferAccount,
+				Account:         transaction.Account,
+				TransferAccount: transaction.TransferAccount,
+				Time:            transaction.Time,
+				Amount:          transaction.Amount,
+				Message:         fmt.Sprintf("the transfer points at account %q, which the file does not hold", transaction.TransferAccount),
+			})
+		}
+
+		if exists && currency == transaction.Currency && transaction.TransferAmount != 0 && transaction.TransferAmount != transaction.Amount {
+			report.Findings = append(report.Findings, Finding{
+				Severity:        SeverityUncertain,
+				Kind:            FindingTransferAmountMismatch,
+				Account:         transaction.Account,
+				TransferAccount: transaction.TransferAccount,
+				Time:            transaction.Time,
+				Amount:          transaction.Amount,
+				Message:         "the two sides of a same-currency transfer carry different amounts",
 			})
 		}
 	}

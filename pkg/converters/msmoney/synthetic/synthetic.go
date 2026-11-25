@@ -144,7 +144,8 @@ func MoneyFile() []byte {
 	})
 
 	trnSplit := definitionPage(2, 10, []column{
-		{name: "htrnParent", kind: msisam.ColumnTypeLongInt, fixed: true, offset: 0, size: 4},
+		{name: "htrn", kind: msisam.ColumnTypeLongInt, fixed: true, offset: 0, size: 4},
+		{name: "htrnParent", kind: msisam.ColumnTypeLongInt, fixed: true, offset: 4, size: 4},
 	})
 
 	crnc := definitionPage(1, 11, []column{
@@ -175,8 +176,8 @@ func MoneyFile() []byte {
 	})
 
 	trnSplitData := dataPage(5, [][]byte{
-		packRow(1, []byte{0x01}, longInt(100), nil),
-		packRow(1, []byte{0x01}, longInt(100), nil),
+		packRow(2, []byte{0x03}, append(longInt(101), longInt(100)...), nil),
+		packRow(2, []byte{0x03}, append(longInt(102), longInt(100)...), nil),
 	})
 
 	crncData := dataPage(6, [][]byte{

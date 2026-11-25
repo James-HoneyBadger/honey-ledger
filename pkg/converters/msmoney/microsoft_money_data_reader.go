@@ -54,6 +54,10 @@ type microsoftMoneyTransaction struct {
 	Account *microsoftMoneyAccount
 	Related *microsoftMoneyAccount
 	Amount  int64
+	// Split marks a transaction that came from one fragment of a split
+	// transaction, so its provenance is never mistaken for a standalone
+	// entry.
+	Split bool
 	// RelatedAmount is the amount the related account received, in the related
 	// account's currency. Money stores both sides of a transfer; when the two
 	// currencies differ, the receiving amount is not equal to Amount. Zero
@@ -535,6 +539,7 @@ func flattenMicrosoftMoneyTransactions(rows []*microsoftMoneyTransactionRow, par
 			Time:        row.Time,
 			Account:     account,
 			Description: row.Memo,
+			Split:       children[row.Handle],
 		}
 
 		if row.Link != microsoftMoneyNoHandle {

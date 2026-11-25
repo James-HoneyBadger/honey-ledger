@@ -131,6 +131,8 @@ func TestFlattenMicrosoftMoneyTransactions(t *testing.T) {
 
 	assert.Equal(t, int64(600), transfers[6].Amount)
 	assert.Equal(t, int64(0), transfers[6].RelatedAmount, "a split fragment cannot consume a whole receiving row")
+	assert.True(t, transfers[6].Split, "a split fragment keeps its provenance")
+	assert.False(t, transfers[0].Split, "a whole transfer is not a split")
 }
 
 func TestFlattenMicrosoftMoneyTransactionsWithoutReceivingRows(t *testing.T) {

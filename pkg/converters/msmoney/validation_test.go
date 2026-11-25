@@ -61,3 +61,27 @@ func TestValidateTransactionsReportsTransferFallback(t *testing.T) {
 	assert.Equal(t, SeverityUncertain, report.Findings[0].Severity, "an unmatched receiving side is an interpretation, not a fact")
 	require.Len(t, report.Uncertain(), 1)
 }
+
+func TestValidateTransactionsReportsOrphanTransfer(t *testing.T) {
+	data := validationSample()
+	data.Transactions[1].TransferAccount = "Mystery"
+
+	report := ValidateTransactions(data)
+
+	// Orphan finding plus both now-inactive accounts (Savings no longer
+	// receives the transfer).
+	require.Len(t, report.Findings, 3)
+	assert.Equal(t, FindingOrphanTransferAccount, report.Findings[0].Kind)
+	assert.Equal(t, SeverityConfirmed, report.Findings[0].Severity)
+}
+
+func TestValidateTransactionsReportsSameCurrencyMismatch(t *testing.T) {
+	data := validationSample()
+	data.Transactions[1].TransferAmount = 9500 // differs from Amount 10000, same currency
+
+	report := ValidateTransactions(data)
+
+	require.Len(t, report.Findings, 2)
+	assert.Equal(t, FindingTransferAmountMismatch, report.Findings[0].Kind)
+	assert.Equal(t, SeverityUncertain, report.Findings[0].Severity)
+}

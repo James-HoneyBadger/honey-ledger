@@ -121,6 +121,12 @@
                                 </two-column-select>
                             </v-col>
 
+                            <v-col cols="12" v-if="fileType.toLowerCase().includes('money') || fileSubType?.toLowerCase().includes('mny') || fileSubType?.toLowerCase().includes('mbf')">
+                                <v-alert type="info" variant="tonal" density="compact">
+                                    Microsoft Money migration: retain your original file and review the imported transactions before committing. Investment activity and unsupported records may be omitted. Use HB SunRise for extraction diagnostics and an independent reconciliation.
+                                </v-alert>
+                            </v-col>
+
                             <v-col cols="12" md="12" v-if="allFileSubTypes">
                                 <v-select
                                     item-title="displayName"

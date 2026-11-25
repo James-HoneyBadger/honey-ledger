@@ -8,14 +8,14 @@
 //
 // The generated database holds:
 //
-//   - two USD accounts, Checking and Savings
+//   - three USD accounts, Checking and Savings plus a closed Old Joint
 //   - a nested category, Food > Groceries, and a top level category Rent
 //   - one split transaction, whose total row is skipped, allocated to
 //     Groceries and Rent
 //   - one transfer from Checking to Savings, stored on both sides
 //   - one investment row, which has no counterpart in the extracted ledger
 //
-// Extracting it yields 2 accounts, 3 transactions (two split parts and the
+// Extracting it yields 3 accounts, 3 transactions (two split parts and the
 // transfer) and a skipped count of 3 (the split total, the receiving side of
 // the transfer, and the investment row).
 package synthetic

@@ -5,6 +5,7 @@ package msmoney
 
 import (
 	"fmt"
+	"sort"
 	"time"
 )
 
@@ -41,6 +42,12 @@ const (
 	// FindingTransferAmountMismatch marks a transfer between two accounts of
 	// the same currency whose sides carry different amounts.
 	FindingTransferAmountMismatch FindingKind = "transfer_amount_mismatch"
+	// FindingSplitTotalMismatch marks a split whose fragments do not add up to
+	// the total the parent row stores.
+	FindingSplitTotalMismatch FindingKind = "split_total_mismatch"
+	// FindingSplitBrokenReference marks a split link whose transaction row the
+	// file does not hold.
+	FindingSplitBrokenReference FindingKind = "split_broken_reference"
 )
 
 // Finding is one observation of the validation report. Severity distinguishes
@@ -67,6 +74,24 @@ type Finding struct {
 // books balance.
 type ValidationReport struct {
 	Findings []Finding
+	// Summary counts and totals the extracted data, for a reconciliation
+	// overview. It is calculated from the transactions the file holds, not a
+	// Money account balance.
+	Summary ValidationSummary
+}
+
+// ValidationSummary counts and totals the extracted transactions.
+type ValidationSummary struct {
+	TransactionCount int
+	IncomeCount      int
+	ExpenseCount     int
+	TransferCount    int
+	IncomeTotal      int64
+	ExpenseTotal     int64
+	// Earliest and Latest are the first and last transaction dates, zero when
+	// there are no transactions.
+	Earliest time.Time
+	Latest   time.Time
 }
 
 // IsClean reports whether the validation found nothing worth reporting.
@@ -135,6 +160,20 @@ func ValidateTransactions(data *ExtractedData) ValidationReport {
 	}
 
 	for _, transaction := range data.Transactions {
+		report.Summary.TransactionCount++
+		report.Summary.Earliest, report.Summary.Latest = extendDateRange(report.Summary.Earliest, report.Summary.Latest, transaction.Time)
+
+		switch transaction.Type {
+		case ExtractedTypeIncome:
+			report.Summary.IncomeCount++
+			report.Summary.IncomeTotal += transaction.Amount
+		case ExtractedTypeExpense:
+			report.Summary.ExpenseCount++
+			report.Summary.ExpenseTotal += transaction.Amount
+		case ExtractedTypeTransfer:
+			report.Summary.TransferCount++
+		}
+
 		key := keyOf(transaction)
 
 		if count := seen[key]; count > 1 {
@@ -223,5 +262,84 @@ func ValidateTransactions(data *ExtractedData) ValidationReport {
 		}
 	}
 
+	reportSplitFindings(data, &report)
+
 	return report
+}
+
+// reportSplitFindings compares the split links the file stores with its rows:
+// the fragments' sum against the parent's stored total, and split links that
+// point at a row the file does not hold.
+func reportSplitFindings(data *ExtractedData, report *ValidationReport) {
+	fragmentSums := make(map[int64]int64, len(data.splitTotals))
+
+	for _, transaction := range data.Transactions {
+		if transaction.splitParent != 0 {
+			fragmentSums[transaction.splitParent] += transaction.Amount
+		}
+	}
+
+	// A deterministic order keeps the report stable run to run.
+	parents := make([]int64, 0, len(data.splitTotals))
+
+	for parent := range data.splitTotals {
+		parents = append(parents, parent)
+	}
+
+	sort.Slice(parents, func(i, j int) bool { return parents[i] < parents[j] })
+
+	for _, parent := range parents {
+		total := data.splitTotals[parent]
+
+		if fragmentSums[parent] == 0 || fragmentSums[parent] == total {
+			continue
+		}
+
+		account := splitAccountOf(data, parent)
+
+		report.Findings = append(report.Findings, Finding{
+			Severity: SeverityConfirmed,
+			Kind:     FindingSplitTotalMismatch,
+			Account:  account,
+			Message:  fmt.Sprintf("the split fragments add up to %d.%02d but the parent row stores %d.%02d", fragmentSums[parent]/100, fragmentSums[parent]%100, total/100, total%100),
+		})
+	}
+
+	if data.splitReferencesWithoutRows > 0 {
+		report.Findings = append(report.Findings, Finding{
+			Severity: SeverityConfirmed,
+			Kind:     FindingSplitBrokenReference,
+			Message:  fmt.Sprintf("%d split link(s) point at a transaction row the file does not hold", data.splitReferencesWithoutRows),
+		})
+	}
+}
+
+// splitAccountOf returns the account of the first fragment of the split whose
+// parent has the given handle, or an empty string when no fragment is left.
+func splitAccountOf(data *ExtractedData, parent int64) string {
+	for _, transaction := range data.Transactions {
+		if transaction.splitParent == parent {
+			return transaction.Account
+		}
+	}
+
+	return ""
+}
+
+// extendDateRange returns the range of the given dates widened to include the
+// given time.
+func extendDateRange(earliest, latest, when time.Time) (time.Time, time.Time) {
+	if when.IsZero() {
+		return earliest, latest
+	}
+
+	if earliest.IsZero() || when.Before(earliest) {
+		earliest = when
+	}
+
+	if latest.IsZero() || when.After(latest) {
+		latest = when
+	}
+
+	return earliest, latest
 }

@@ -22,10 +22,11 @@ func TestSyntheticMoneyFileExtractsEndToEnd(t *testing.T) {
 	extracted, err := ExtractMicrosoftMoneyData(newTestContext(), data)
 	require.NoError(t, err)
 
-	// Two USD accounts, sorted by name.
-	require.Len(t, extracted.Accounts, 2)
+	// Three USD accounts, sorted by name; the third is closed in the file.
+	require.Len(t, extracted.Accounts, 3)
 	assert.Equal(t, ExtractedAccount{Name: "Checking", Currency: "USD"}, extracted.Accounts[0])
-	assert.Equal(t, ExtractedAccount{Name: "Savings", Currency: "USD"}, extracted.Accounts[1])
+	assert.Equal(t, ExtractedAccount{Name: "Old Joint", Currency: "USD", Closed: true}, extracted.Accounts[1])
+	assert.Equal(t, ExtractedAccount{Name: "Savings", Currency: "USD"}, extracted.Accounts[2])
 
 	// Three transactions: two split parts and the transfer.
 	require.Len(t, extracted.Transactions, 3)
@@ -40,12 +41,16 @@ func TestSyntheticMoneyFileExtractsEndToEnd(t *testing.T) {
 	assert.Equal(t, "Food", groceries.Category, "the nested category keeps its parent")
 	assert.Equal(t, "Groceries", groceries.SubCategory)
 	assert.Equal(t, "Groceries", groceries.Memo)
+	assert.Equal(t, "Groceria Market", groceries.Payee)
+	assert.True(t, groceries.Split, "the groceries row is a split fragment")
 
 	rent := extracted.Transactions[1]
 	assert.Equal(t, ExtractedTypeExpense, rent.Type)
 	assert.Equal(t, int64(2000), rent.Amount)
 	assert.Empty(t, rent.Category, "a top level category has no parent")
 	assert.Equal(t, "Rent", rent.SubCategory)
+	assert.Equal(t, "Landlord", rent.Payee)
+	assert.True(t, rent.Split, "the rent row is a split fragment")
 
 	transfer := extracted.Transactions[2]
 	assert.Equal(t, ExtractedTypeTransfer, transfer.Type)
@@ -54,6 +59,8 @@ func TestSyntheticMoneyFileExtractsEndToEnd(t *testing.T) {
 	assert.Equal(t, "Savings", transfer.TransferAccount)
 	assert.Equal(t, "USD", transfer.TransferCurrency)
 	assert.Equal(t, "Move to savings", transfer.Memo)
+	assert.Empty(t, transfer.Payee)
+	assert.False(t, transfer.Split)
 
 	// Skipped: the split total, the receiving side of the transfer, and the
 	// investment row.

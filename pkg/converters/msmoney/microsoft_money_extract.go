@@ -24,6 +24,11 @@ const (
 type ExtractedAccount struct {
 	Name     string
 	Currency string
+	// Closed and Hidden mirror the flags the file stores on the account row.
+	// An account may stay in the file after the user closed or hid it, with
+	// its history intact.
+	Closed bool
+	Hidden bool
 }
 
 // ExtractedTransaction is one transaction of a Microsoft Money file. The amount
@@ -46,6 +51,12 @@ type ExtractedTransaction struct {
 	Category       string
 	SubCategory    string
 	Memo           string
+	// Payee is the payee the file names on the transaction, when it names one.
+	Payee string
+	// splitParent carries the handle of the split parent row this transaction
+	// is a fragment of. It stays inside the engine so validation can compare
+	// the fragments' sum with the stored total.
+	splitParent int64
 }
 
 // ExtractedData is everything of a Microsoft Money file that can be exported
@@ -59,6 +70,10 @@ type ExtractedData struct {
 	// rows, definitions and catalog entries that could not be decoded. An
 	// empty report means everything that was found decoded cleanly.
 	Diagnostics ExtractedDiagnostics
+	// splitTotals and splitReferencesWithoutRows stay inside the engine so
+	// validation can check the file's split links against its rows.
+	splitTotals                map[int64]int64
+	splitReferencesWithoutRows int
 }
 
 // ExtractedDiagnostics summarizes the decoding problems found while reading a
@@ -137,14 +152,21 @@ func ExtractMicrosoftMoneyDataWithOptions(ctx Context, data []byte, options Extr
 	}
 
 	result := &ExtractedData{
-		Accounts:     make([]ExtractedAccount, 0, len(moneyData.Accounts)),
-		Transactions: make([]ExtractedTransaction, 0, len(moneyData.Transactions)),
-		Skipped:      moneyData.Skipped,
-		Diagnostics:  moneyData.Diagnostics,
+		Accounts:                   make([]ExtractedAccount, 0, len(moneyData.Accounts)),
+		Transactions:               make([]ExtractedTransaction, 0, len(moneyData.Transactions)),
+		Skipped:                    moneyData.Skipped,
+		Diagnostics:                moneyData.Diagnostics,
+		splitTotals:                moneyData.SplitTotals,
+		splitReferencesWithoutRows: moneyData.SplitReferencesWithoutRows,
 	}
 
 	for _, account := range moneyData.Accounts {
-		result.Accounts = append(result.Accounts, ExtractedAccount{Name: account.Name, Currency: account.Currency})
+		result.Accounts = append(result.Accounts, ExtractedAccount{
+			Name:     account.Name,
+			Currency: account.Currency,
+			Closed:   account.Closed,
+			Hidden:   account.Hidden,
+		})
 	}
 
 	for _, transaction := range moneyData.Transactions {
@@ -154,9 +176,11 @@ func ExtractMicrosoftMoneyDataWithOptions(ctx Context, data []byte, options Extr
 			Currency:    transaction.Account.Currency,
 			Amount:      transaction.Amount,
 			Split:       transaction.Split,
+			splitParent: transaction.SplitParent,
 			Category:    transaction.Category,
 			SubCategory: transaction.SubCategory,
 			Memo:        transaction.Description,
+			Payee:       transaction.Payee,
 		}
 
 		switch transaction.Type {

@@ -136,8 +136,17 @@ func buildMicrosoftMoneyTransactionRowItems(transaction *ExtractedTransaction) m
 		items[datatable.TRANSACTION_DATA_TABLE_SUB_CATEGORY] = transaction.SubCategory
 	}
 
-	if transaction.Memo != "" {
-		items[datatable.TRANSACTION_DATA_TABLE_DESCRIPTION] = transaction.Memo
+	// A Money transaction names the payee separately from the memo. The memo
+	// is the better description when present; the payee steps in when it is
+	// empty, so a payment without a memo keeps a human name.
+	description := transaction.Memo
+
+	if description == "" {
+		description = transaction.Payee
+	}
+
+	if description != "" {
+		items[datatable.TRANSACTION_DATA_TABLE_DESCRIPTION] = description
 	}
 
 	return items

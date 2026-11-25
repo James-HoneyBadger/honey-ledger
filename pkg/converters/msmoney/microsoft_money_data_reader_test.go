@@ -88,9 +88,9 @@ func TestFlattenMicrosoftMoneyTransactions(t *testing.T) {
 	}
 
 	parents := map[int64]bool{19: true}
-	children := map[int64]bool{15: true}
+	children := map[int64]int64{15: 19}
 
-	transactions, skipped := flattenMicrosoftMoneyTransactions(rows, parents, children, accounts, categories)
+	transactions, skipped := flattenMicrosoftMoneyTransactions(rows, parents, children, accounts, categories, nil)
 	require.Len(t, transactions, 9)
 	assert.Equal(t, 12, skipped)
 
@@ -146,7 +146,7 @@ func TestFlattenMicrosoftMoneyTransactionsWithoutReceivingRows(t *testing.T) {
 		{Handle: 1, Account: 100, Link: 200, Amount: -50000, Time: moment},
 	}
 
-	transactions, skipped := flattenMicrosoftMoneyTransactions(rows, nil, nil, accounts, nil)
+	transactions, skipped := flattenMicrosoftMoneyTransactions(rows, nil, nil, accounts, nil, nil)
 	require.Len(t, transactions, 1)
 	assert.Equal(t, 0, skipped)
 

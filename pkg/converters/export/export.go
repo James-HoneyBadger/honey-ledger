@@ -195,6 +195,8 @@ func absInt(value int) int {
 type jsonAccount struct {
 	Name     string `json:"name"`
 	Currency string `json:"currency"`
+	Closed   bool   `json:"closed,omitempty"`
+	Hidden   bool   `json:"hidden,omitempty"`
 }
 
 type jsonTransaction struct {
@@ -207,6 +209,7 @@ type jsonTransaction struct {
 	Category        string `json:"category,omitempty"`
 	Subcategory     string `json:"subcategory,omitempty"`
 	Memo            string `json:"memo,omitempty"`
+	Payee           string `json:"payee,omitempty"`
 }
 
 func WriteJSON(w io.Writer, source string, data *msmoney.ExtractedData) error {
@@ -223,7 +226,7 @@ func WriteJSON(w io.Writer, source string, data *msmoney.ExtractedData) error {
 	}
 
 	for _, a := range data.Accounts {
-		document.Accounts = append(document.Accounts, jsonAccount{Name: a.Name, Currency: a.Currency})
+		document.Accounts = append(document.Accounts, jsonAccount{Name: a.Name, Currency: a.Currency, Closed: a.Closed, Hidden: a.Hidden})
 	}
 
 	for _, t := range data.Transactions {
@@ -237,6 +240,7 @@ func WriteJSON(w io.Writer, source string, data *msmoney.ExtractedData) error {
 			Category:        t.Category,
 			Subcategory:     t.SubCategory,
 			Memo:            t.Memo,
+			Payee:           t.Payee,
 		})
 	}
 
@@ -381,6 +385,7 @@ func WriteQIF(w io.Writer, data *msmoney.ExtractedData) error {
 		time     time.Time
 		amount   int64
 		memo     string
+		payee    string
 		category string
 	}
 
@@ -404,13 +409,13 @@ func WriteQIF(w io.Writer, data *msmoney.ExtractedData) error {
 
 		if t.Type == msmoney.ExtractedTypeTransfer {
 			addAccount(t.TransferAccount)
-			entries[t.Account] = append(entries[t.Account], entry{t.Time, -t.Amount, t.Memo, "[" + t.TransferAccount + "]"})
-			entries[t.TransferAccount] = append(entries[t.TransferAccount], entry{t.Time, t.Amount, t.Memo, "[" + t.Account + "]"})
+			entries[t.Account] = append(entries[t.Account], entry{t.Time, -t.Amount, t.Memo, t.Payee, "[" + t.TransferAccount + "]"})
+			entries[t.TransferAccount] = append(entries[t.TransferAccount], entry{t.Time, t.Amount, t.Memo, t.Payee, "[" + t.Account + "]"})
 
 			continue
 		}
 
-		entries[t.Account] = append(entries[t.Account], entry{t.Time, signedAmount(t), t.Memo, categoryPath(t)})
+		entries[t.Account] = append(entries[t.Account], entry{t.Time, signedAmount(t), t.Memo, t.Payee, categoryPath(t)})
 	}
 
 	sort.Strings(names)
@@ -424,7 +429,13 @@ func WriteQIF(w io.Writer, data *msmoney.ExtractedData) error {
 			out.WriteString("D" + e.time.Format("01/02/2006") + "\n")
 			out.WriteString("T" + formatAmount(e.amount) + "\n")
 
-			if e.memo != "" {
+			if e.payee != "" {
+				out.WriteString("P" + qifText(e.payee) + "\n")
+
+				if e.memo != "" {
+					out.WriteString("M" + qifText(e.memo) + "\n")
+				}
+			} else if e.memo != "" {
 				out.WriteString("P" + qifText(e.memo) + "\nM" + qifText(e.memo) + "\n")
 			}
 

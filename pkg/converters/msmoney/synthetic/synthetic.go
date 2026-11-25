@@ -120,10 +120,12 @@ func MoneyFile() []byte {
 	catalogDefinition := make([]byte, msisam.PageSize)
 	catalogDefinition[0] = msisam.PageTypeDefinition
 
-	acct := definitionPage(2, 7, []column{
+	acct := definitionPage(3, 7, []column{
 		{name: "hacct", kind: msisam.ColumnTypeLongInt, fixed: true, offset: 0, size: 4},
 		{name: "hcrnc", kind: msisam.ColumnTypeLongInt, fixed: true, offset: 4, size: 4},
 		{name: "szFull", kind: msisam.ColumnTypeText, size: 40, variable: 0},
+		{name: "fClosed", kind: msisam.ColumnTypeBool, fixed: true, offset: 8, size: 1},
+		{name: "fHidden", kind: msisam.ColumnTypeBool, fixed: true, offset: 9, size: 1},
 	})
 
 	cat := definitionPage(5, 8, []column{
@@ -141,6 +143,12 @@ func MoneyFile() []byte {
 		{name: "amt", kind: msisam.ColumnTypeMoney, fixed: true, offset: 20, size: 8},
 		{name: "mMemo", kind: msisam.ColumnTypeMemo, size: 40, variable: 0},
 		{name: "dt", kind: msisam.ColumnTypeDateTime, fixed: true, offset: 28, size: 8},
+		{name: "hpay", kind: msisam.ColumnTypeLongInt, fixed: true, offset: 36, size: 4},
+	})
+
+	pay := definitionPage(2, 14, []column{
+		{name: "hpay", kind: msisam.ColumnTypeLongInt, fixed: true, offset: 0, size: 4},
+		{name: "szName", kind: msisam.ColumnTypeText, size: 40, variable: 0},
 	})
 
 	trnSplit := definitionPage(2, 10, []column{
@@ -154,8 +162,14 @@ func MoneyFile() []byte {
 	})
 
 	acctData := dataPage(1, [][]byte{
-		accountRow(1, 1, "Checking"),
-		accountRow(2, 1, "Savings"),
+		accountRow(1, 1, "Checking", false, false),
+		accountRow(2, 1, "Savings", false, false),
+		accountRow(3, 1, "Old Joint", true, false),
+	})
+
+	payData := dataPage(13, [][]byte{
+		payeeRow(50, "Groceria Market"),
+		payeeRow(51, "Landlord"),
 	})
 
 	catData := dataPage(3, [][]byte{
@@ -167,12 +181,12 @@ func MoneyFile() []byte {
 	})
 
 	trnData := dataPage(4, [][]byte{
-		transactionRow(101, 1, 0, 12, 0, amount(-3000), "Groceries", dayBits),
-		transactionRow(102, 1, 0, 21, 0, amount(-2000), "Rent", dayBits),
-		transactionRow(200, 1, 2, 0, 0, amount(-10000), "Move to savings", dayBits),
-		transactionRow(100, 1, 0, 0, 0, amount(-5000), "", dayBits), // split total
-		transactionRow(201, 2, 1, 0, 0, amount(10000), "", dayBits), // receiving side
-		transactionRow(300, 2, 0, 0, 7, amount(-2500), "", dayBits), // investment
+		transactionRow(101, 1, 0, 12, 0, 50, amount(-3000), "Groceries", dayBits),
+		transactionRow(102, 1, 0, 21, 0, 51, amount(-2000), "Rent", dayBits),
+		transactionRow(200, 1, 2, 0, 0, 0, amount(-10000), "Move to savings", dayBits),
+		transactionRow(100, 1, 0, 0, 0, 50, amount(-5000), "", dayBits), // split total
+		transactionRow(201, 2, 1, 0, 0, 0, amount(10000), "", dayBits),  // receiving side
+		transactionRow(300, 2, 0, 0, 7, 0, amount(-2500), "", dayBits),  // investment
 	})
 
 	trnSplitData := dataPage(5, [][]byte{
@@ -190,6 +204,7 @@ func MoneyFile() []byte {
 		catalogRow(4, "TRN"),
 		catalogRow(5, "TRN_SPLIT"),
 		catalogRow(6, "CRNC"),
+		catalogRow(13, "PAY"),
 	})
 
 	pages := [][]byte{
@@ -206,6 +221,8 @@ func MoneyFile() []byte {
 		trnSplitData,      // 10
 		crncData,          // 11
 		catalogData,       // 12
+		pay,               // 13
+		payData,           // 14
 	}
 
 	file := make([]byte, 0, len(pages)*msisam.PageSize)
@@ -307,13 +324,32 @@ func dateBits(day time.Time) uint64 {
 	return math.Float64bits(days)
 }
 
-// accountRow lays out one ACCT row.
-func accountRow(handle, currency int64, name string) []byte {
-	fixed := make([]byte, 8)
+// accountRow lays out one ACCT row. A bool column stores its value in the
+// nullability mask: a set bit is true.
+func accountRow(handle, currency int64, name string, closed, hidden bool) []byte {
+	fixed := make([]byte, 10)
 	putU32(fixed, 0, uint32(handle))
 	putU32(fixed, 4, uint32(currency))
 
-	return packRow(3, []byte{0x07}, fixed, [][]byte{utf16Bytes(name)})
+	nullMask := byte(0x07)
+
+	if closed {
+		nullMask |= 0x08
+	}
+
+	if hidden {
+		nullMask |= 0x10
+	}
+
+	return packRow(5, []byte{nullMask}, fixed, [][]byte{utf16Bytes(name)})
+}
+
+// payeeRow lays out one PAY row.
+func payeeRow(handle int64, name string) []byte {
+	fixed := make([]byte, 4)
+	putU32(fixed, 0, uint32(handle))
+
+	return packRow(2, []byte{0x03}, fixed, [][]byte{utf16Bytes(name)})
 }
 
 // categoryRow lays out one CAT row.
@@ -326,8 +362,8 @@ func categoryRow(handle, parent int64, name string) []byte {
 }
 
 // transactionRow lays out one TRN row.
-func transactionRow(handle, account, link, category, security int64, amount uint64, memo string, day uint64) []byte {
-	fixed := make([]byte, 36)
+func transactionRow(handle, account, link, category, security, payee int64, amount uint64, memo string, day uint64) []byte {
+	fixed := make([]byte, 40)
 	putU32(fixed, 0, uint32(handle))
 	putU32(fixed, 4, uint32(account))
 	putU32(fixed, 8, uint32(link))
@@ -335,8 +371,9 @@ func transactionRow(handle, account, link, category, security int64, amount uint
 	putU32(fixed, 16, uint32(security))
 	putU64(fixed, 20, amount)
 	putU64(fixed, 28, day)
+	putU32(fixed, 36, uint32(payee))
 
-	return packRow(8, []byte{0xFF}, fixed, [][]byte{memoBytes(memo)})
+	return packRow(9, []byte{0xFF, 0x01}, fixed, [][]byte{memoBytes(memo)})
 }
 
 // catalogRow lays out one catalog row, which names the object stored on the

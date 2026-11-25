@@ -37,6 +37,9 @@ const (
 type microsoftMoneyAccount struct {
 	Name     string
 	Currency string
+	// Closed and Hidden mirror the flags the file stores on the account row.
+	Closed bool
+	Hidden bool
 }
 
 // microsoftMoneyCategory is a category as a Microsoft Money data file stores it.
@@ -58,6 +61,9 @@ type microsoftMoneyTransaction struct {
 	// transaction, so its provenance is never mistaken for a standalone
 	// entry.
 	Split bool
+	// SplitParent is the handle of the transaction row that holds the total
+	// of the split this transaction is a fragment of.
+	SplitParent int64
 	// RelatedAmount is the amount the related account received, in the related
 	// account's currency. Money stores both sides of a transfer; when the two
 	// currencies differ, the receiving amount is not equal to Amount. Zero
@@ -66,6 +72,7 @@ type microsoftMoneyTransaction struct {
 	Category      string
 	SubCategory   string
 	Description   string
+	Payee         string
 }
 
 // microsoftMoneyTransactionRow is the transaction row a data file stores, before
@@ -76,6 +83,7 @@ type microsoftMoneyTransactionRow struct {
 	Link     int64
 	Category int64
 	Security int64
+	Payee    int64
 	Amount   int64
 	Time     time.Time
 	Memo     string
@@ -91,6 +99,13 @@ type microsoftMoneyData struct {
 	// Skipped counts the rows the file holds that cannot become a transaction,
 	// such as investment activity, which has no counterpart in the ledger.
 	Skipped int
+	// SplitTotals holds the stored total of every split parent row, keyed by
+	// the parent handle, in hundredths. Validation compares the fragments'
+	// sum against it.
+	SplitTotals map[int64]int64
+	// SplitReferencesWithoutRows counts the split links whose referenced row
+	// does not exist, so validation can report the file's broken references.
+	SplitReferencesWithoutRows int
 	// Diagnostics reports the decoding problems found while reading the file.
 	Diagnostics ExtractedDiagnostics
 }
@@ -147,15 +162,23 @@ func readMicrosoftMoneyData(ctx Context, data []byte, options ExtractionOptions)
 		return nil, err
 	}
 
+	payees, err := readMicrosoftMoneyPayees(ctx, database)
+
+	if err != nil {
+		return nil, err
+	}
+
 	parents, children, err := readMicrosoftMoneySplitHandles(ctx, database)
 
 	if err != nil {
 		return nil, err
 	}
 
+	splitTotals, missingReferences := collectMicrosoftMoneySplitIntegrity(rows, parents, children)
+
 	reportProgress(options, "flattening", 0, 0)
 
-	transactions, skipped := flattenMicrosoftMoneyTransactions(rows, parents, children, accounts, categories)
+	transactions, skipped := flattenMicrosoftMoneyTransactions(rows, parents, children, accounts, categories, payees)
 
 	allAccounts := make([]*microsoftMoneyAccount, 0, len(accounts))
 
@@ -166,10 +189,12 @@ func readMicrosoftMoneyData(ctx Context, data []byte, options ExtractionOptions)
 	sort.Slice(allAccounts, func(i, j int) bool { return allAccounts[i].Name < allAccounts[j].Name })
 
 	return &microsoftMoneyData{
-		Accounts:     allAccounts,
-		Transactions: transactions,
-		Skipped:      skipped,
-		Diagnostics:  extractedDiagnostics(diagnostics),
+		Accounts:                   allAccounts,
+		Transactions:               transactions,
+		Skipped:                    skipped,
+		SplitTotals:                splitTotals,
+		SplitReferencesWithoutRows: missingReferences,
+		Diagnostics:                extractedDiagnostics(diagnostics),
 	}, nil
 }
 
@@ -280,6 +305,7 @@ func readMicrosoftMoneyAccounts(ctx Context, database *msisam.Database, currenci
 	err = database.EachRow(ctx, table.Definition, func(fields []msisam.Field) error {
 		var handle, currency int64
 		name := ""
+		closed, hidden := false, false
 
 		for _, field := range fields {
 			switch field.Column.Name {
@@ -295,6 +321,10 @@ func readMicrosoftMoneyAccounts(ctx Context, database *msisam.Database, currenci
 				}
 
 				name = strings.TrimSpace(text)
+			case "fClosed":
+				closed = database.Bool(field)
+			case "fHidden":
+				hidden = database.Bool(field)
 			}
 		}
 
@@ -302,7 +332,7 @@ func readMicrosoftMoneyAccounts(ctx Context, database *msisam.Database, currenci
 			return nil
 		}
 
-		accounts[handle] = &microsoftMoneyAccount{Name: name, Currency: currencies[currency]}
+		accounts[handle] = &microsoftMoneyAccount{Name: name, Currency: currencies[currency], Closed: closed, Hidden: hidden}
 
 		return nil
 	})
@@ -384,6 +414,51 @@ func readMicrosoftMoneyCategories(ctx Context, database *msisam.Database) (map[i
 	return categories, nil
 }
 
+// readMicrosoftMoneyPayees returns the name of every payee, keyed by the handle
+// the data file gives it. A file without a payee table leaves every payee
+// unnamed rather than failing the whole file.
+func readMicrosoftMoneyPayees(ctx Context, database *msisam.Database) (map[int64]string, error) {
+	table, err := database.Table("PAY")
+
+	if err != nil {
+		return map[int64]string{}, nil
+	}
+
+	payees := make(map[int64]string, table.Definition.RowCount)
+
+	err = database.EachRow(ctx, table.Definition, func(fields []msisam.Field) error {
+		var handle int64
+		name := ""
+
+		for _, field := range fields {
+			switch field.Column.Name {
+			case "hpay":
+				handle, _ = database.Int(field)
+			case "szName":
+				text, err := database.String(field)
+
+				if err != nil {
+					return nil
+				}
+
+				name = strings.TrimSpace(text)
+			}
+		}
+
+		if handle != microsoftMoneyNoHandle && name != "" {
+			payees[handle] = name
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrDataFileNotReadable, err)
+	}
+
+	return payees, nil
+}
+
 // readMicrosoftMoneyTransactionRows returns every transaction row of the data
 // file, in storage order.
 func readMicrosoftMoneyTransactionRows(ctx Context, database *msisam.Database, options ExtractionOptions) ([]*microsoftMoneyTransactionRow, error) {
@@ -411,6 +486,8 @@ func readMicrosoftMoneyTransactionRows(ctx Context, database *msisam.Database, o
 				row.Category, _ = database.Int(field)
 			case "hsec":
 				row.Security, _ = database.Int(field)
+			case "hpay":
+				row.Payee, _ = database.Int(field)
 			case "amt":
 				row.Amount, _ = database.Int(field)
 			case "mMemo":
@@ -444,12 +521,13 @@ func readMicrosoftMoneyTransactionRows(ctx Context, database *msisam.Database, o
 }
 
 // readMicrosoftMoneySplitHandles returns the handles of the transactions that
-// hold splits, as two maps. Money stores a transaction with splits as a parent
-// row that holds the total and one row per split, and only the splits belong in
-// the ledger. Parents map a parent handle; children map a split row handle.
-func readMicrosoftMoneySplitHandles(ctx Context, database *msisam.Database) (parents map[int64]bool, children map[int64]bool, err error) {
+// hold splits. Money stores a transaction with splits as a parent row that
+// holds the total and one row per split, and only the splits belong in the
+// ledger. Parents maps a parent handle; children maps a split row handle to its
+// parent handle.
+func readMicrosoftMoneySplitHandles(ctx Context, database *msisam.Database) (parents map[int64]bool, children map[int64]int64, err error) {
 	parents = make(map[int64]bool)
-	children = make(map[int64]bool)
+	children = make(map[int64]int64)
 
 	table, err := database.Table("TRN_SPLIT")
 
@@ -459,17 +537,27 @@ func readMicrosoftMoneySplitHandles(ctx Context, database *msisam.Database) (par
 	}
 
 	err = database.EachRow(ctx, table.Definition, func(fields []msisam.Field) error {
+		var parent, child int64
+
 		for _, field := range fields {
 			switch field.Column.Name {
 			case "htrnParent":
-				if parent, ok := database.Int(field); ok && parent != microsoftMoneyNoHandle {
-					parents[parent] = true
+				if value, ok := database.Int(field); ok && value != microsoftMoneyNoHandle {
+					parent = value
 				}
 			case "htrn":
-				if child, ok := database.Int(field); ok && child != microsoftMoneyNoHandle {
-					children[child] = true
+				if value, ok := database.Int(field); ok && value != microsoftMoneyNoHandle {
+					child = value
 				}
 			}
+		}
+
+		if parent != microsoftMoneyNoHandle {
+			parents[parent] = true
+		}
+
+		if child != microsoftMoneyNoHandle && parent != microsoftMoneyNoHandle {
+			children[child] = parent
 		}
 
 		return nil
@@ -490,6 +578,36 @@ type transferCounterpart struct {
 	time   time.Time
 }
 
+// collectMicrosoftMoneySplitIntegrity records what the file's split links
+// claim so validation can check them: the stored total of every parent row and
+// how many split links refer to a row the file does not hold.
+func collectMicrosoftMoneySplitIntegrity(rows []*microsoftMoneyTransactionRow, parents map[int64]bool, children map[int64]int64) (map[int64]int64, int) {
+	totals := make(map[int64]int64, len(parents))
+	held := make(map[int64]bool, len(rows))
+
+	for _, row := range rows {
+		held[row.Handle] = true
+
+		if parents[row.Handle] {
+			if row.Amount < 0 {
+				totals[row.Handle] = convertMicrosoftMoneyAmount(-row.Amount)
+			} else {
+				totals[row.Handle] = convertMicrosoftMoneyAmount(row.Amount)
+			}
+		}
+	}
+
+	missing := 0
+
+	for child, parent := range children {
+		if !held[child] || !held[parent] {
+			missing++
+		}
+	}
+
+	return totals, missing
+}
+
 // flattenMicrosoftMoneyTransactions turns the stored rows into transactions,
 // reporting the count of rows that cannot become one. A transfer is stored twice,
 // once for each account, so only the row that takes the money out becomes a
@@ -498,7 +616,7 @@ type transferCounterpart struct {
 // differ from the outgoing amount when the two accounts use different
 // currencies; when the receiving row cannot be matched unambiguously, the
 // outgoing amount is used instead of inventing one.
-func flattenMicrosoftMoneyTransactions(rows []*microsoftMoneyTransactionRow, parents map[int64]bool, children map[int64]bool, accounts map[int64]*microsoftMoneyAccount, categories map[int64]*microsoftMoneyCategory) ([]*microsoftMoneyTransaction, int) {
+func flattenMicrosoftMoneyTransactions(rows []*microsoftMoneyTransactionRow, parents map[int64]bool, children map[int64]int64, accounts map[int64]*microsoftMoneyAccount, categories map[int64]*microsoftMoneyCategory, payees map[int64]string) ([]*microsoftMoneyTransaction, int) {
 	// Index the receiving side of every transfer: an outgoing row holds the
 	// receiving account in Link, and the receiving row holds the outgoing
 	// account in Link with the opposite sign. Split fragments never act as the
@@ -506,7 +624,7 @@ func flattenMicrosoftMoneyTransactions(rows []*microsoftMoneyTransactionRow, par
 	counterparts := make(map[[2]int64][]transferCounterpart)
 
 	for _, row := range rows {
-		if row.Link == microsoftMoneyNoHandle || row.Amount <= 0 || children[row.Handle] {
+		if row.Link == microsoftMoneyNoHandle || row.Amount <= 0 || children[row.Handle] != 0 {
 			continue
 		}
 
@@ -539,7 +657,9 @@ func flattenMicrosoftMoneyTransactions(rows []*microsoftMoneyTransactionRow, par
 			Time:        row.Time,
 			Account:     account,
 			Description: row.Memo,
-			Split:       children[row.Handle],
+			Split:       children[row.Handle] != 0,
+			SplitParent: children[row.Handle],
+			Payee:       payees[row.Payee],
 		}
 
 		if row.Link != microsoftMoneyNoHandle {
@@ -588,8 +708,8 @@ func flattenMicrosoftMoneyTransactions(rows []*microsoftMoneyTransactionRow, par
 // for an outgoing transfer row, converted to hundredths, or zero when no single
 // receiving row matches. A split fragment never receives a whole transfer, so
 // no amount is taken from one.
-func matchTransferCounterpartAmount(row *microsoftMoneyTransactionRow, children map[int64]bool, counterparts map[[2]int64][]transferCounterpart) int64 {
-	if children[row.Handle] {
+func matchTransferCounterpartAmount(row *microsoftMoneyTransactionRow, children map[int64]int64, counterparts map[[2]int64][]transferCounterpart) int64 {
+	if children[row.Handle] != 0 {
 		return 0
 	}
 

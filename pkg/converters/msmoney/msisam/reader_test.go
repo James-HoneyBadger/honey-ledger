@@ -677,3 +677,42 @@ func TestDiagnosticsStaysSilentWithoutSink(t *testing.T) {
 	require.NoError(t, database.EachRow(context.Background(), definition, func([]Field) error { return nil }))
 	assert.Nil(t, database.Diagnostics())
 }
+
+func TestCatalogPageIsNotCorruptAndCorruptDefinitionsCountOnce(t *testing.T) {
+	// A database whose catalog is in use holds a bare definition page at the
+	// catalog page; that is not corruption.
+	bareCatalog := make([]byte, PageSize)
+	bareCatalog[0] = PageTypeDefinition
+
+	catalogRow := packRow(1, []byte{0x01}, []byte{1, 0, 0, 0}, [][]byte{[]byte("THING")})
+	catalogData := buildDataPage(catalogPage, [][]byte{catalogRow})
+
+	table := definitionPages(1, 1, []testColumn{
+		{name: "hwidget", kind: ColumnTypeLongInt, fixed: true, offset: 0, size: 4},
+	})
+
+	// A second definition page whose content is nonsense, so its definition
+	// cannot be decoded.
+	corrupt := make([]byte, PageSize)
+	corrupt[0] = PageTypeDefinition
+	putU16(corrupt, definitionRowCountOffset, 0x7fff)
+	putU16(corrupt, definitionVariableColumnCountOffset, 0x7fff)
+
+	database, err := Open(buildDatabaseFromPages(append(append(append([][]byte{}, table...), bareCatalog, corrupt), catalogData)...))
+	require.NoError(t, err)
+
+	diagnostics := &Diagnostics{}
+	database.SetDiagnostics(diagnostics)
+
+	// Repeated reads, like the repeated table lookups of an extraction, must
+	// not inflate the count of one corrupt definition or count the bare
+	// catalog page as corrupt.
+	for range 3 {
+		_, err := database.Definitions()
+		require.NoError(t, err)
+	}
+
+	assert.Equal(t, 1, diagnostics.CorruptDefinitions)
+	assert.Len(t, diagnostics.DefinitionSamples, 1)
+	assert.Equal(t, 3, diagnostics.DefinitionSamples[0].Page)
+}

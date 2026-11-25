@@ -30,6 +30,10 @@ type Diagnostics struct {
 	RowSamples         []RowDiagnostic
 	DefinitionSamples  []DefinitionDiagnostic
 	CatalogEntrySample []CatalogDiagnostic
+
+	// definitionPagesRecorded keeps one corrupt definition counted once,
+	// however often its page is decoded.
+	definitionPagesRecorded map[int]bool
 }
 
 // RowDiagnostic describes one row that failed to decode.
@@ -95,6 +99,17 @@ func (d *Diagnostics) recordUnresolvedRow(definition, page, slot int) {
 }
 
 func (d *Diagnostics) recordDefinition(page int, err error) {
+	// The same definition is decoded once per table lookup; one corrupt page
+	// must count once, however often it is read.
+	if d.definitionPagesRecorded == nil {
+		d.definitionPagesRecorded = make(map[int]bool)
+	}
+
+	if d.definitionPagesRecorded[page] {
+		return
+	}
+
+	d.definitionPagesRecorded[page] = true
 	d.CorruptDefinitions++
 
 	if len(d.DefinitionSamples) < maxDiagnosticSamples {

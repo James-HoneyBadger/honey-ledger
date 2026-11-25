@@ -299,7 +299,12 @@ func (d *Database) Definitions() ([]*Definition, error) {
 		definition, err := d.Definition(page)
 
 		if err != nil {
-			if d.diagnostics != nil {
+			// A database whose catalog is in use holds a bare definition page
+			// at the catalog page: it carries no readable definition because
+			// the catalog is read from its data pages. That is not corruption.
+			catalogInUse := page == catalogPage && len(d.dataPagesOf(catalogPage)) > 0
+
+			if d.diagnostics != nil && !catalogInUse {
 				d.diagnostics.recordDefinition(page, err)
 			}
 

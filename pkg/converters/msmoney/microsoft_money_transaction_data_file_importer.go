@@ -4,6 +4,7 @@
 package msmoney
 
 import (
+	"strings"
 	"time"
 
 	"github.com/James-HoneyBadger/honey-ledger/pkg/converters/converter"
@@ -32,8 +33,8 @@ func (c *microsoftMoneyTransactionDataFileImporter) ParseImportedData(ctx core.C
 		return nil, nil, nil, nil, nil, nil, mappedExtractionError(err)
 	}
 
-	if moneyData.Skipped > 0 {
-		log.Warnf(ctx, "[microsoft_money_transaction_data_file_importer.ParseImportedData] skipped %d rows of the Microsoft Money data file of user \"uid:%d\", because they are investment activity, a split total, or have no amount, account or date", moneyData.Skipped, user.Uid)
+	if moneyData.Skipped.Total() > 0 {
+		log.Warnf(ctx, "[microsoft_money_transaction_data_file_importer.ParseImportedData] skipped %d rows of the Microsoft Money data file of user \"uid:%d\": %s", moneyData.Skipped.Total(), user.Uid, strings.Join(moneyData.Skipped.Reasons(), ", "))
 	}
 
 	if !moneyData.Diagnostics.IsEmpty() {

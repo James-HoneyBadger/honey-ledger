@@ -129,9 +129,27 @@ func TestRc4RoundTrips(t *testing.T) {
 func TestExpandText(t *testing.T) {
 	// Compressed text stores one byte per character until a zero byte switches
 	// the engine back to UTF-16.
-	assert.Equal(t, utf16Bytes("AB"), expandText([]byte{0x41, 0x00, 0x42, 0x00}), "uncompressed input")
-	assert.Equal(t, utf16Bytes("AB"), expandText([]byte{0x41, 0x42}))
-	assert.Equal(t, utf16Bytes("AB\u20ACC"), expandText([]byte{0x41, 0x42, 0x00, 0xAC, 0x20, 0x43, 0x00}))
+	expanded, err := expandText([]byte{0x41, 0x00, 0x42, 0x00})
+	require.NoError(t, err)
+	assert.Equal(t, utf16Bytes("AB"), expanded, "uncompressed input")
+
+	expanded, err = expandText([]byte{0x41, 0x42})
+	require.NoError(t, err)
+	assert.Equal(t, utf16Bytes("AB"), expanded)
+
+	expanded, err = expandText([]byte{0x41, 0x42, 0x00, 0xAC, 0x20, 0x43, 0x00})
+	require.NoError(t, err)
+	assert.Equal(t, utf16Bytes("AB\u20ACC"), expanded)
+}
+
+func TestExpandTextReportsTruncation(t *testing.T) {
+	// A lone byte after the toggle to UTF-16 is half a code unit; it must be
+	// reported, never dropped.
+	_, err := expandText([]byte{0x41, 0x00, 0x42})
+	require.ErrorIs(t, err, ErrCorruptRow)
+
+	_, err = decodeText([]byte{0x41, 0x00, 0x42})
+	require.ErrorIs(t, err, ErrCorruptRow)
 }
 
 // utf16Bytes returns the UTF-16 encoding of text with every high byte present.

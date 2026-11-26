@@ -97,8 +97,8 @@ type microsoftMoneyData struct {
 	Accounts     []*microsoftMoneyAccount
 	Transactions []*microsoftMoneyTransaction
 	// Skipped counts the rows the file holds that cannot become a transaction,
-	// such as investment activity, which has no counterpart in the ledger.
-	Skipped int
+	// by reason.
+	Skipped SkippedBreakdown
 	// SplitTotals holds the stored total of every split parent row, keyed by
 	// the parent handle, in hundredths. Validation compares the fragments'
 	// sum against it.
@@ -609,14 +609,14 @@ func collectMicrosoftMoneySplitIntegrity(rows []*microsoftMoneyTransactionRow, p
 }
 
 // flattenMicrosoftMoneyTransactions turns the stored rows into transactions,
-// reporting the count of rows that cannot become one. A transfer is stored twice,
-// once for each account, so only the row that takes the money out becomes a
-// transaction, with the account that receives it as the related account. The
-// amount the receiving account got is taken from its own row, because it can
-// differ from the outgoing amount when the two accounts use different
-// currencies; when the receiving row cannot be matched unambiguously, the
-// outgoing amount is used instead of inventing one.
-func flattenMicrosoftMoneyTransactions(rows []*microsoftMoneyTransactionRow, parents map[int64]bool, children map[int64]int64, accounts map[int64]*microsoftMoneyAccount, categories map[int64]*microsoftMoneyCategory, payees map[int64]string) ([]*microsoftMoneyTransaction, int) {
+// counting the rows that cannot become one by the reason they were left out. A
+// transfer is stored twice, once for each account, so only the row that takes
+// the money out becomes a transaction, with the account that receives it as
+// the related account. The amount the receiving account got is taken from its
+// own row, because it can differ from the outgoing amount when the two
+// accounts use different currencies; when the receiving row cannot be matched
+// unambiguously, the outgoing amount is used instead of inventing one.
+func flattenMicrosoftMoneyTransactions(rows []*microsoftMoneyTransactionRow, parents map[int64]bool, children map[int64]int64, accounts map[int64]*microsoftMoneyAccount, categories map[int64]*microsoftMoneyCategory, payees map[int64]string) ([]*microsoftMoneyTransaction, SkippedBreakdown) {
 	// Index the receiving side of every transfer: an outgoing row holds the
 	// receiving account in Link, and the receiving row holds the outgoing
 	// account in Link with the opposite sign. Split fragments never act as the
@@ -633,14 +633,26 @@ func flattenMicrosoftMoneyTransactions(rows []*microsoftMoneyTransactionRow, par
 	}
 
 	transactions := make([]*microsoftMoneyTransaction, 0, len(rows))
-	skipped := 0
+	var skipped SkippedBreakdown
 
 	for _, row := range rows {
 		// The parent of a split only holds the total of the splits.
-		// Investment activity has no counterpart in the ledger, and a
-		// transaction without an amount moves no money.
-		if parents[row.Handle] || row.Security != microsoftMoneyNoHandle || row.Amount == 0 {
-			skipped++
+		if parents[row.Handle] {
+			skipped.SplitTotals++
+
+			continue
+		}
+
+		// Investment activity has no counterpart in the ledger.
+		if row.Security != microsoftMoneyNoHandle {
+			skipped.Investments++
+
+			continue
+		}
+
+		// A transaction without an amount moves no money.
+		if row.Amount == 0 {
+			skipped.NoAmount++
 
 			continue
 		}
@@ -648,7 +660,7 @@ func flattenMicrosoftMoneyTransactions(rows []*microsoftMoneyTransactionRow, par
 		account, exists := accounts[row.Account]
 
 		if !exists || row.Time.IsZero() {
-			skipped++
+			skipped.NoAccountOrDate++
 
 			continue
 		}
@@ -666,7 +678,7 @@ func flattenMicrosoftMoneyTransactions(rows []*microsoftMoneyTransactionRow, par
 			// Money stores both sides of a transfer, so the side that receives
 			// the money would repeat the transaction.
 			if row.Amount > 0 {
-				skipped++
+				skipped.TransferReceivingSide++
 
 				continue
 			}
@@ -674,7 +686,7 @@ func flattenMicrosoftMoneyTransactions(rows []*microsoftMoneyTransactionRow, par
 			related, exists := accounts[row.Link]
 
 			if !exists {
-				skipped++
+				skipped.TransferWithoutAccount++
 
 				continue
 			}

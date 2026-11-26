@@ -222,7 +222,7 @@ func WriteJSON(w io.Writer, source string, data *msmoney.ExtractedData) error {
 		Source:       source,
 		Accounts:     make([]jsonAccount, 0, len(data.Accounts)),
 		Transactions: make([]jsonTransaction, 0, len(data.Transactions)),
-		Skipped:      data.Skipped,
+		Skipped:      data.Skipped.Total(),
 	}
 
 	for _, a := range data.Accounts {

@@ -63,8 +63,9 @@ func TestSyntheticMoneyFileExtractsEndToEnd(t *testing.T) {
 	assert.False(t, transfer.Split)
 
 	// Skipped: the split total, the receiving side of the transfer, and the
-	// investment row.
-	assert.Equal(t, 3, extracted.Skipped)
+	// investment row, each counted with its reason.
+	assert.Equal(t, SkippedBreakdown{SplitTotals: 1, Investments: 1, TransferReceivingSide: 1}, extracted.Skipped)
+	assert.Equal(t, 3, extracted.Skipped.Total())
 }
 
 func TestSyntheticBackupFileExtractsTheSameData(t *testing.T) {

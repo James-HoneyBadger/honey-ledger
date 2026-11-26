@@ -59,13 +59,72 @@ type ExtractedTransaction struct {
 	splitParent int64
 }
 
+// SkippedBreakdown counts, by reason, the rows that cannot become a
+// transaction, so a skipped row is never just part of an opaque total. Every
+// field is a reason; Total is their sum.
+type SkippedBreakdown struct {
+	// SplitTotals counts the parent rows that only hold the total of their
+	// splits; each split is exported as a transaction of its own.
+	SplitTotals int
+	// Investments counts investment activity, which has no counterpart in a
+	// plain ledger.
+	Investments int
+	// NoAmount counts rows whose amount is zero, which move no money.
+	NoAmount int
+	// NoAccountOrDate counts rows whose account or date is missing.
+	NoAccountOrDate int
+	// TransferReceivingSide counts the receiving rows of transfers; the
+	// transfer is exported once, from the side the money left.
+	TransferReceivingSide int
+	// TransferWithoutAccount counts transfers whose receiving account the
+	// file does not hold.
+	TransferWithoutAccount int
+}
+
+// Total returns the number of rows that cannot become a transaction.
+func (s SkippedBreakdown) Total() int {
+	return s.SplitTotals + s.Investments + s.NoAmount + s.NoAccountOrDate +
+		s.TransferReceivingSide + s.TransferWithoutAccount
+}
+
+// Reasons returns the non-zero reasons in a fixed order, phrased for a user,
+// or nil when nothing was skipped.
+func (s SkippedBreakdown) Reasons() []string {
+	type entry struct {
+		count int
+		one   string
+		many  string
+	}
+
+	entries := []entry{
+		{s.SplitTotals, "1 split total", "%d split totals"},
+		{s.Investments, "1 investment row", "%d investment rows"},
+		{s.NoAmount, "1 row without an amount", "%d rows without an amount"},
+		{s.NoAccountOrDate, "1 row without an account or date", "%d rows without an account or date"},
+		{s.TransferReceivingSide, "1 receiving side of a transfer", "%d receiving sides of transfers"},
+		{s.TransferWithoutAccount, "1 transfer whose receiving account is unknown", "%d transfers whose receiving account is unknown"},
+	}
+
+	var reasons []string
+
+	for _, reason := range entries {
+		if reason.count == 1 {
+			reasons = append(reasons, reason.one)
+		} else if reason.count > 1 {
+			reasons = append(reasons, fmt.Sprintf(reason.many, reason.count))
+		}
+	}
+
+	return reasons
+}
+
 // ExtractedData is everything of a Microsoft Money file that can be exported
 type ExtractedData struct {
 	Accounts     []ExtractedAccount
 	Transactions []ExtractedTransaction
-	// Skipped counts the rows that cannot be exported: investment activity,
-	// split totals and rows without an amount, account or date.
-	Skipped int
+	// Skipped counts the rows that cannot be exported, by reason. Total is
+	// the number of rows left out; the fields name why.
+	Skipped SkippedBreakdown
 	// Diagnostics reports the decoding problems found while reading the file:
 	// rows, definitions and catalog entries that could not be decoded. An
 	// empty report means everything that was found decoded cleanly.

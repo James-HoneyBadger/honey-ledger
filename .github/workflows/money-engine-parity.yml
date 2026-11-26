@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2020-2026 Honey Badger Universe
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: Cross-repository Money engine parity
+on:
+  schedule:
+    - cron: '23 8 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: James-HoneyBadger/HB_SunRise
+          ref: main
+          path: peer-engine
+          persist-credentials: false
+      - run: python3 scripts/check-money-engine.py --peer peer-engine

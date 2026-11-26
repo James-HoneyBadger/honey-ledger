@@ -125,24 +125,36 @@ func (r ValidationReport) withSeverity(severity Severity) []Finding {
 // distinguishable in a statement: the same account, day, amount, category and
 // memo appearing twice is a duplicate.
 type transactionKey struct {
-	account     string
-	date        string
-	amount      int64
-	category    string
-	subCategory string
-	memo        string
-	transferTo  string
+	kind             string
+	currency         string
+	payee            string
+	transferCurrency string
+	transferAmount   int64
+	splitParent      int64
+	account          string
+	date             string
+	amount           int64
+	category         string
+	subCategory      string
+	memo             string
+	transferTo       string
 }
 
 func keyOf(transaction ExtractedTransaction) transactionKey {
 	return transactionKey{
-		account:     transaction.Account,
-		date:        transaction.Time.Format("2006-01-02"),
-		amount:      transaction.Amount,
-		category:    transaction.Category,
-		subCategory: transaction.SubCategory,
-		memo:        transaction.Memo,
-		transferTo:  transaction.TransferAccount,
+		kind:             transaction.Type,
+		currency:         transaction.Currency,
+		payee:            transaction.Payee,
+		transferCurrency: transaction.TransferCurrency,
+		transferAmount:   transaction.TransferAmount,
+		splitParent:      transaction.splitParent,
+		account:          transaction.Account,
+		date:             transaction.Time.Format("2006-01-02"),
+		amount:           transaction.Amount,
+		category:         transaction.Category,
+		subCategory:      transaction.SubCategory,
+		memo:             transaction.Memo,
+		transferTo:       transaction.TransferAccount,
 	}
 }
 
@@ -291,7 +303,8 @@ func reportSplitFindings(data *ExtractedData, report *ValidationReport) {
 	for _, parent := range parents {
 		total := data.splitTotals[parent]
 
-		if fragmentSums[parent] == 0 || fragmentSums[parent] == total {
+		sum, present := fragmentSums[parent]
+		if !present || sum == total {
 			continue
 		}
 

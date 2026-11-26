@@ -92,7 +92,13 @@ func TestFlattenMicrosoftMoneyTransactions(t *testing.T) {
 
 	transactions, skipped := flattenMicrosoftMoneyTransactions(rows, parents, children, accounts, categories, nil)
 	require.Len(t, transactions, 9)
-	assert.Equal(t, 12, skipped)
+	assert.Equal(t, SkippedBreakdown{
+		SplitTotals:           1, // the split parent
+		Investments:           1, // the investment row
+		NoAmount:              1, // the zero-amount row
+		NoAccountOrDate:       2, // the dateless row and the unknown-account row
+		TransferReceivingSide: 7, // every receiving row of a transfer
+	}, skipped)
 
 	assert.Equal(t, transactionTypeExpense, transactions[0].Type)
 	assert.Equal(t, int64(2500), transactions[0].Amount)
@@ -148,7 +154,7 @@ func TestFlattenMicrosoftMoneyTransactionsWithoutReceivingRows(t *testing.T) {
 
 	transactions, skipped := flattenMicrosoftMoneyTransactions(rows, nil, nil, accounts, nil, nil)
 	require.Len(t, transactions, 1)
-	assert.Equal(t, 0, skipped)
+	assert.Equal(t, SkippedBreakdown{}, skipped)
 
 	assert.Equal(t, int64(500), transactions[0].Amount)
 	assert.Equal(t, int64(0), transactions[0].RelatedAmount)
@@ -213,7 +219,7 @@ func TestRealDatabaseExtract(t *testing.T) {
 	assert.Greater(t, types[transactionTypeExpense], 100)
 	assert.Greater(t, types[transactionTypeIncome], 100)
 	assert.Greater(t, types[transactionTypeTransfer], 100)
-	assert.Greater(t, moneyData.Skipped, 0)
+	assert.Greater(t, moneyData.Skipped.Total(), 0)
 }
 
 func TestExtractReportsProgress(t *testing.T) {

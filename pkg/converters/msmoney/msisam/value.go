@@ -6,6 +6,7 @@ package msisam
 import (
 	"fmt"
 	"math"
+	"math/big"
 	"time"
 	"unicode/utf16"
 )
@@ -88,9 +89,14 @@ func readU64(buffer []byte, offset int) (uint64, bool) {
 
 // decodeText converts stored text to a Go string. Text is UTF-16 unless a high
 // byte of every character is zero, in which case the engine drops those bytes
-// and a single byte toggles between the two encodings.
-func decodeText(data []byte) string {
-	expanded := expandText(data)
+// and a single byte toggles between the two encodings. Text that ends with a
+// lone byte is truncated and reported instead of being dropped.
+func decodeText(data []byte) (string, error) {
+	expanded, err := expandText(data)
+
+	if err != nil {
+		return "", err
+	}
 
 	codeUnits := make([]uint16, 0, len(expanded)/2)
 
@@ -98,11 +104,14 @@ func decodeText(data []byte) string {
 		codeUnits = append(codeUnits, uint16(expanded[offset])|uint16(expanded[offset+1])<<8)
 	}
 
-	return string(utf16.Decode(codeUnits))
+	return string(utf16.Decode(codeUnits)), nil
 }
 
-// expandText undoes the engine's text compression, returning UTF-16 bytes.
-func expandText(data []byte) []byte {
+// expandText undoes the engine's text compression, returning UTF-16 bytes. A
+// compressed block ends when a 0x00 byte toggles the encoding to uncompressed
+// UTF-16; a lone trailing byte after the toggle is half a code unit, so the
+// block is reported as corrupt instead of decoded short.
+func expandText(data []byte) ([]byte, error) {
 	expanded := make([]byte, 0, len(data)*2)
 	compressed := true
 
@@ -122,14 +131,14 @@ func expandText(data []byte) []byte {
 		}
 
 		if offset+1 >= len(data) {
-			break
+			return nil, ErrCorruptRow
 		}
 
 		expanded = append(expanded, data[offset], data[offset+1])
 		offset += 2
 	}
 
-	return expanded
+	return expanded, nil
 }
 
 // Field is one column of a row, still encoded the way the page stores it.
@@ -143,10 +152,12 @@ type Field struct {
 	Data []byte
 }
 
-// Value decodes a field into a Go value. Integers decode to int64, money,
-// float, double and numeric decode to float64, dates decode to time.Time, text
-// and memos decode to string, and binary and OLE decode to []byte. A GUID
-// decodes to its dashed string form, and a null field decodes to nil.
+// Value decodes a field into a Go value. Integers decode to int64, money to
+// the scaled int64 the file stores (×10000), float and double to float64,
+// their stored IEEE-754 form, and numeric to *big.Rat, so no decimal value
+// passes through floating point. Dates decode to time.Time, text and memos
+// decode to string, and binary and OLE decode to []byte. A GUID decodes to
+// its dashed string form, and a null field decodes to nil.
 func (d *Database) Value(field Field) (any, error) {
 	// A bool stores its value in the null mask, so it is never null.
 	if field.Column.Type == ColumnTypeBool {
@@ -173,7 +184,7 @@ func (d *Database) Value(field Field) (any, error) {
 			return nil, ErrCorruptRow
 		}
 
-		return float64(value) / moneyScale, nil
+		return value, nil
 	case ColumnTypeFloat, ColumnTypeDouble:
 		value, ok := d.Float(field)
 
@@ -275,38 +286,41 @@ func (d *Database) Float(field Field) (float64, bool) {
 	}
 }
 
-// Numeric returns the value of a numeric field, which stores a sign byte
-// followed by a little endian magnitude scaled by the column's scale. It is a
-// float64 convenience for inspection; financial code must not treat it as an
-// exact representation.
-func (d *Database) Numeric(field Field) (float64, bool) {
+// Numeric returns the exact value of a numeric field as a rational: the stored
+// magnitude over 10^scale. It is the exact form of the value; render it to
+// decimal only where it is shown.
+func (d *Database) Numeric(field Field) (*big.Rat, bool) {
 	return d.numeric(field)
 }
 
 // numeric decodes a numeric field, which stores a sign byte followed by a
-// little endian magnitude that is scaled by the column's scale.
-func (d *Database) numeric(field Field) (float64, bool) {
-	if len(field.Data) < 1+numericBytes {
-		return 0, false
+// little endian magnitude that is scaled by the column's scale. The result is
+// exact: the magnitude over 10^scale, with no floating point in between.
+func (d *Database) numeric(field Field) (*big.Rat, bool) {
+	if field.Null || len(field.Data) < 1+numericBytes {
+		return nil, false
 	}
 
-	magnitude := uint64(0)
+	raw := field.Data[1 : 1+numericBytes]
+	magnitudeBytes := make([]byte, numericBytes)
 
-	for index := numericBytes - 1; index >= 0; index-- {
-		magnitude = magnitude<<8 | uint64(field.Data[1+index])
+	for index := range raw {
+		magnitudeBytes[numericBytes-1-index] = raw[index]
 	}
 
-	value := float64(magnitude)
-
-	for scale := 0; scale < field.Column.Scale; scale++ {
-		value /= 10
-	}
+	value := new(big.Rat).SetFrac(new(big.Int).SetBytes(magnitudeBytes), pow10(field.Column.Scale))
 
 	if field.Data[0]&0x80 != 0 {
-		value = -value
+		value.Neg(value)
 	}
 
 	return value, true
+}
+
+// pow10 returns 10 raised to the given power, which the numeric scale needs
+// as an exact denominator.
+func pow10(scale int) *big.Int {
+	return new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
 }
 
 // Time returns the value of a date field, which counts days from 1899-12-30.
@@ -352,7 +366,7 @@ func (d *Database) String(field Field) (string, error) {
 		return "", fmt.Errorf("%w: column %s is not text", ErrCorruptRow, field.Column.Name)
 	}
 
-	return decodeText(data), nil
+	return decodeText(data)
 }
 
 // Bytes returns the value of a binary or OLE field.

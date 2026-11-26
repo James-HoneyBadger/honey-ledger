@@ -81,7 +81,13 @@ func (d *Database) Catalog() ([]CatalogEntry, error) {
 				continue
 			}
 
-			name := decodeText(rowPage[start+begin : start+end])
+			name, err := decodeText(rowPage[start+begin : start+end])
+
+			if err != nil {
+				d.recordCatalogEntry(page, index, fmt.Sprintf("catalog row name is truncated: %s", err))
+
+				continue
+			}
 
 			if name == "" {
 				d.recordCatalogEntry(page, index, "catalog row has no name")

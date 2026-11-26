@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math/big"
 	"testing"
 	"time"
 
@@ -343,7 +344,18 @@ func TestValueDecoding(t *testing.T) {
 
 	value, err := database.Value(Field{Column: Column{Type: ColumnTypeMoney}, Data: money})
 	require.NoError(t, err)
-	assert.InDelta(t, -123.4567, value, 1e-9)
+	assert.Equal(t, int64(-1234567), value, "money decodes to its scaled integer, not a float")
+
+	numeric := make([]byte, 1+numericBytes)
+	numeric[0] = 0x80 // sign bit set: negative
+	numeric[1] = 0x78
+	numeric[2] = 0x56
+	numeric[3] = 0x34
+	numeric[4] = 0x12
+
+	exact, err := database.Value(Field{Column: Column{Type: ColumnTypeNumeric, Scale: 3}, Data: numeric})
+	require.NoError(t, err)
+	assert.Equal(t, "-305419.896", exact.(*big.Rat).FloatString(3), "numeric decodes exactly, not through float64")
 
 	days := make([]byte, 8)
 	putU64(days, 0, 0x40E34A0000000000) // 2008-02-26

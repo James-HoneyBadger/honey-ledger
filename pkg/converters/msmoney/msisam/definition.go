@@ -244,7 +244,13 @@ func (d *Database) Definition(page int) (*Definition, error) {
 			return nil, err
 		}
 
-		definition.Columns[index].Name = decodeText(name)
+		columnName, err := decodeText(name)
+
+		if err != nil {
+			return nil, fmt.Errorf("%w: column %d name is truncated", ErrCorruptDefinition, index)
+		}
+
+		definition.Columns[index].Name = columnName
 	}
 
 	return definition, nil

@@ -199,8 +199,8 @@ func printSummary(stdout io.Writer, data *msmoney.ExtractedData) {
 
 	fmt.Fprintln(stdout, ".")
 
-	if data.Skipped > 0 {
-		fmt.Fprintf(stdout, "%d rows were left out: investment activity, split totals, and rows without an amount, account or date.\n", data.Skipped)
+	if data.Skipped.Total() > 0 {
+		fmt.Fprintf(stdout, "%d rows were left out: %s.\n", data.Skipped.Total(), strings.Join(data.Skipped.Reasons(), ", "))
 	}
 
 	fmt.Fprintln(stdout)

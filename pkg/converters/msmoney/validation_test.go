@@ -164,3 +164,32 @@ func TestValidateTransactionsSummary(t *testing.T) {
 	assert.Equal(t, day, summary.Earliest)
 	assert.Equal(t, day.AddDate(0, 0, 1), summary.Latest)
 }
+
+func TestValidationDistinctTransactionIdentity(t *testing.T) {
+	data := validationSample()
+	original := data.Transactions[0]
+	for _, variant := range []ExtractedTransaction{
+		{Time: original.Time, Type: ExtractedTypeIncome, Account: original.Account, Currency: original.Currency, Amount: original.Amount, Category: original.Category, SubCategory: original.SubCategory, Memo: original.Memo},
+		{Time: original.Time, Type: original.Type, Account: original.Account, Currency: original.Currency, Amount: original.Amount, Category: original.Category, SubCategory: original.SubCategory, Memo: original.Memo, Payee: "Different payee"},
+	} {
+		data.Transactions = append(data.Transactions, variant)
+	}
+	for _, finding := range ValidateTransactions(data).Findings {
+		assert.NotEqual(t, FindingDuplicateTransaction, finding.Kind)
+	}
+}
+
+func TestValidationZeroSumSplitMismatch(t *testing.T) {
+	data := validationSample()
+	data.Transactions[0].Amount = 0
+	data.Transactions[0].Split = true
+	data.Transactions[0].splitParent = 42
+	data.splitTotals = map[int64]int64{42: 100}
+	found := false
+	for _, finding := range ValidateTransactions(data).Findings {
+		if finding.Kind == FindingSplitTotalMismatch {
+			found = true
+		}
+	}
+	assert.True(t, found)
+}

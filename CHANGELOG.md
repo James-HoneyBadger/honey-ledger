@@ -8,6 +8,27 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 Releases before 1.4.2 are not catalogued here; see the commit history for
 details.
 
+## [2.3.1] - 2026-11-26
+
+### Fixed
+
+- Microsoft Money decoding reports truncated text instead of silently dropping
+  it: a truncated text column fails the row, a truncated column name fails its
+  definition, and a truncated catalog name is counted as an unreadable entry.
+- The generic value layer no longer decodes money or numeric columns through
+  floating point: money decodes to its scaled integer and numeric to an exact
+  rational.
+- Split validation detects zero-sum split mismatches and keys transactions by
+  payee, currency and transfer amount, so distinct transactions are not merged
+  as duplicates.
+
+### Changed
+
+- Microsoft Money imports report skipped rows by reason — split totals,
+  investment rows, rows without an amount or account/date, the receiving side
+  of a transfer, and transfers without a known receiving account — instead of
+  only a total.
+
 ## [2.3.0] - 2026-11-25
 
 ### Changed

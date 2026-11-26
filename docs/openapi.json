@@ -1146,7 +1146,7 @@
   "info": {
     "description": "Self-hosted personal finance API exposed by the local Honey Ledger backend.",
     "title": "Honey Ledger API",
-    "version": "2.3.0"
+    "version": "2.3.1"
   },
   "openapi": "3.1.0",
   "paths": {
